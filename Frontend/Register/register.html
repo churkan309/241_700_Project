@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <title>สมัครสมาชิก - CourseFlow</title>
+    <link rel="stylesheet" href="../../style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="register.js"></script>
+</head>
+
+<body>
+    <div class="container auth-container">
+        <h1>สร้างบัญชีผู้ใช้ใหม่</h1>
+        <div id="message"></div>
+        <div class="input-group">
+            <label>ชื่อ (Firstname)</label>
+            <input type="text" id="firstname" placeholder="กรอกชื่อ">
+        </div>
+        <div class="input-group">
+            <label>นามสกุล (Lastname)</label>
+            <input type="text" id="lastname" placeholder="กรอกนามสกุล">
+        </div>
+        <div class="input-group">
+            <label>รหัสผ่าน (Password)</label>
+            <input type="password" id="password" placeholder="ตั้งรหัสผ่าน 6 หลักขึ้นไป">
+        </div>
+        <div class="input-group">
+            <label>เลือกสถานะการใช้งาน</label>
+            <div class="radio-group">
+                <label><input type="radio" name="role" value="teacher"> อาจารย์</label>
+                <label><input type="radio" name="role" value="student"> นักศึกษา</label>
+            </div>
+        </div>
+        <button onclick="submitRegister()" style="margin-top: 10px;">ลงทะเบียน</button>
+        <div class="link-text">
+            <span>มีบัญชีอยู่แล้ว? <a href="../Home/home.html">กลับไปเข้าสู่ระบบ</a></span>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <title>รายละเอียดวิชา</title>
+    <link rel="stylesheet" href="../../style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="course.js"></script>
+</head>
+
+<body>
+    <div class="container" style="max-width: 1000px;">
+        <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+            <button onclick="goBack()" class="btn-auto"
+                style="background-color: #e2e8f0; color: var(--text-main); font-size: 0.9rem;">← ย้อนกลับ</button>
+            <h2 id="courseTitle" style="margin: 0;">กำลังโหลดข้อมูล...</h2>
+        </div>
+        <div id="contentArea"></div>
+    </div>
+</body>
+
+</html>

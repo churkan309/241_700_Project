@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql_db_700
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: Project
+    ports:
+      - "8700:3306"
+    volumes:
+      - mysql_data_700:/var/lib/mysql
+    networks:
+      - weblab700
+    restart: always
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin_700
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root
+      UPLOAD_LIMIT: 64M
+    ports:
+      - "8701:80"
+    depends_on:
+      - db
+    networks:
+      - weblab700
+    restart: always
+
+networks:
+  weblab700:
+    driver: bridge
+
+volumes:
+  mysql_data_700:
+    driver: local

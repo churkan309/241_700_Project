@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <title>หน้าแดชบอร์ดนักศึกษา</title>
+    <link rel="stylesheet" href="../../style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="student.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header-panel">
+            <h2>สวัสดี, <span id="studentName"></span></h2>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="toggleProfile()" class="btn-auto"
+                    style="background-color: var(--text-muted);">ตั้งค่าโปรไฟล์</button>
+                <button onclick="logout()" class="btn-auto logout-btn">ออกจากระบบ</button>
+            </div>
+        </div>
+
+        <div id="profileSection"
+            style="display: none; background: #f8fafc; padding: 25px; border-radius: 14px; margin-bottom: 30px; border: 1px solid var(--border);">
+            <h3 style="margin-bottom: 20px;">ตั้งค่าข้อมูลส่วนตัว</h3>
+            <div style="display: flex; gap: 15px;">
+                <div class="input-group" style="flex: 1;">
+                    <label>ชื่อ</label>
+                    <input type="text" id="editFirstname">
+                </div>
+                <div class="input-group" style="flex: 1;">
+                    <label>นามสกุล</label>
+                    <input type="text" id="editLastname">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>รหัสผ่าน</label>
+                <input type="text" id="editPassword">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button onclick="updateProfile()"
+                    style="background-color: var(--success); flex: 2;">บันทึกการเปลี่ยนแปลง</button>
+                <button onclick="deleteAccount()" style="background-color: var(--danger); flex: 1;">ลบบัญชีทิ้ง</button>
+            </div>
+        </div>
+
+        <div>
+            <h3 style="margin-bottom: 20px;">คอร์สเรียนของฉัน</h3>
+            <div id="enrolledList"></div>
+        </div>
+
+        <div class="section-divider"></div>
+        <div>
+            <h3 style="margin-bottom: 20px;">สำรวจคอร์สเรียนที่เปิดสอน</h3>
+            <div id="allCoursesList"></div>
+        </div>
+    </div>
+</body>
+
+</html>
