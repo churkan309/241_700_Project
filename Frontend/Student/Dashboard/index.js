@@ -21,7 +21,6 @@ const heroName      = document.getElementById('heroName');
 const topbarName    = document.getElementById('topbarName');
 const avatarInitial = document.getElementById('avatarInitial');
 const statTotal     = document.getElementById('statTotal');
-const statAvg       = document.getElementById('statAvg');
 const statId        = document.getElementById('statId');
 const tableBody     = document.getElementById('courseTableBody');
 
@@ -34,6 +33,53 @@ function initUI() {
     avatarInitial.textContent = (user.firstname?.[0] || '') + (user.lastname?.[0] || '');
     statId.textContent        = `#${user.id}`;
     loadEnrollments();
+}
+
+// ─────────────────────────────────────────
+//  PROGRESS BAR HELPER
+// ─────────────────────────────────────────
+function renderProgress(pct, completed, total) {
+    // สีแถบเปลี่ยนตามเปอร์เซ็นต์
+    const color = pct >= 100 ? 'var(--green)'
+                : pct >= 50  ? 'var(--accent)'
+                :              'var(--orange)';
+
+    return `
+        <div style="min-width:140px;">
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 5px;
+                gap: 8px;
+            ">
+                <div style="
+                    flex: 1;
+                    height: 6px;
+                    background: var(--border);
+                    border-radius: 99px;
+                    overflow: hidden;
+                ">
+                    <div style="
+                        height: 100%;
+                        width: ${pct}%;
+                        background: ${color};
+                        border-radius: 99px;
+                        transition: width .4s ease;
+                    "></div>
+                </div>
+                <span style="
+                    font-family: 'Prompt', sans-serif;
+                    font-size: .75rem;
+                    font-weight: 600;
+                    color: ${color};
+                    flex-shrink: 0;
+                ">${pct}%</span>
+            </div>
+            <div style="font-size:.72rem; color:var(--text-3);">
+                ${completed} / ${total} บทเรียน
+            </div>
+        </div>`;
 }
 
 // ─────────────────────────────────────────
@@ -51,24 +97,15 @@ async function loadEnrollments() {
         if (enrollments.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="4">
+                    <td colspan="3">
                         <div class="empty-state">
                             <div class="empty-icon">📚</div>
                             <p class="empty-text">คุณยังไม่ได้ลงทะเบียนรายวิชาใด<br>กดปุ่ม "ค้นหารายวิชาเพิ่มเติม" เพื่อเริ่มต้น</p>
                         </div>
                     </td>
                 </tr>`;
-            statAvg.textContent = '–';
             return;
         }
-
-        // คำนวณคะแนนเฉลี่ยรวม
-        const scores = enrollments.map(e =>
-            (e.attendance_score || 0) + (e.assignment_score || 0) +
-            (e.quiz_score || 0) + (e.midterm_score || 0) + (e.final_score || 0)
-        );
-        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-        statAvg.textContent = avg.toFixed(1);
 
         tableBody.innerHTML = enrollments.map((e, idx) => `
             <tr style="animation-delay:${idx * 0.05}s">
@@ -76,12 +113,12 @@ async function loadEnrollments() {
                     <div class="course-name">${escHtml(e.title)}</div>
                     <div class="course-desc">${escHtml(e.description || 'ไม่มีคำอธิบาย')}</div>
                 </td>
-                <td><span class="badge badge-enrolled">● ลงทะเบียนแล้ว</span></td>
                 <td>
-                    <span style="font-family:'Prompt',sans-serif;font-weight:600;color:var(--accent)">
-                        ${(e.attendance_score||0)+(e.assignment_score||0)+(e.quiz_score||0)+(e.midterm_score||0)+(e.final_score||0)}
-                    </span>
-                    <span style="color:var(--text-3);font-size:.8rem"> / 100</span>
+                    ${renderProgress(
+                        e.progress_percent    ?? 0,
+                        e.completed_lessons   ?? 0,
+                        e.total_lessons       ?? 0
+                    )}
                 </td>
                 <td>
                     <button class="btn-view" onclick="viewCourse(${e.course_id})">ดูบทเรียน</button>
@@ -91,7 +128,7 @@ async function loadEnrollments() {
         `).join('');
 
     } catch (err) {
-        tableBody.innerHTML = `<tr><td colspan="4" style="color:var(--red);padding:20px">เกิดข้อผิดพลาด: ${err.response?.data?.message || err.message}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="3" style="color:var(--red);padding:20px">เกิดข้อผิดพลาด: ${err.response?.data?.message || err.message}</td></tr>`;
         toast(err.response?.data?.message || 'โหลดรายวิชาไม่สำเร็จ', 'error');
     }
 }
@@ -132,7 +169,7 @@ document.getElementById('btnCancelDrop').addEventListener('click', () => closeMo
 //  VIEW COURSE
 // ─────────────────────────────────────────
 function viewCourse(courseId) {
-    window.location.href = `../StudentCourse/index.html?courseId=${courseId}`;
+    window.location.href = `../Course/index.html?courseId=${courseId}`;
 }
 
 // ─────────────────────────────────────────
@@ -248,6 +285,9 @@ document.getElementById('btnSaveProfile').addEventListener('click', async () => 
     }
 });
 
+// ─────────────────────────────────────────
+//  DELETE ACCOUNT
+// ─────────────────────────────────────────
 document.getElementById('btnDeleteAccount').addEventListener('click', async () => {
     const confirmed = confirm('คุณต้องการลบบัญชีนี้ถาวรใช่หรือไม่?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้');
     if (!confirmed) return;

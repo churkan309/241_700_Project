@@ -44,10 +44,6 @@
                 <div class="stat-value" id="statTotal">–</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">คะแนนเฉลี่ยรวม</div>
-                <div class="stat-value green" id="statAvg">–</div>
-            </div>
-            <div class="stat-card">
                 <div class="stat-label">รหัสนักศึกษา</div>
                 <div class="stat-value orange" id="statId">–</div>
             </div>
@@ -71,13 +67,12 @@
                     <tr>
                         <th>รายวิชา</th>
                         <th>สถานะ</th>
-                        <th>คะแนนรวม</th>
                         <th>จัดการ</th>
                     </tr>
                 </thead>
                 <tbody id="courseTableBody">
                     <tr class="loading-row">
-                        <td colspan="4">
+                        <td colspan="3">
                             <span class="spinner"></span> กำลังโหลดรายวิชา...
                         </td>
                     </tr>
@@ -109,8 +104,8 @@
             <div class="modal-actions">
                 <button class="btn-cancel" id="btnCancelProfile">ยกเลิก</button>
                 <button class="btn-save" id="btnSaveProfile">บันทึก</button>
-                <button class="btn-save" id="btnDeleteAccount" 
-                style="background:var(--red);color:#960404;">ลบบัญชี</button>
+                <button class="btn-save" id="btnDeleteAccount"
+                    style="background:var(--red);color:#fff;">ลบบัญชี</button>
             </div>
         </div>
     </div>

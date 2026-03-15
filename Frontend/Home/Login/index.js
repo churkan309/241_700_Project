@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             setTimeout(() => {
                 if (data.role === 'teacher') {
-                    window.location.href = '../../Teacher/index.html';
+                    window.location.href = '../../Teacher/Dashboard/index.html';
                 } else {
                     window.location.href = '../../Student/Dashboard/index.html';
                 }

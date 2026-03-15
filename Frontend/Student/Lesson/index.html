@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บทเรียน - Online Course</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ══════════ TOPBAR ══════════ -->
+<header class="topbar">
+    <div class="topbar-left">
+        <button class="btn-back" id="btnBack">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            กลับ
+        </button>
+        <div class="topbar-divider"></div>
+        <div class="course-breadcrumb" id="courseBreadcrumb">กำลังโหลด...</div>
+    </div>
+    <div class="logo">
+        <div class="logo-dot"></div>
+        OnlineCourse
+    </div>
+</header>
+
+<!-- ══════════ LAYOUT ══════════ -->
+<div class="layout">
+
+    <!-- SIDEBAR: lesson list -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3 class="sidebar-title">บทเรียนทั้งหมด</h3>
+            <!-- progress bar -->
+            <div class="progress-wrap" id="progressWrap">
+                <div class="progress-top">
+                    <span class="progress-label">ความคืบหน้า</span>
+                    <span class="progress-pct" id="progressPct">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+                </div>
+                <div class="progress-sub" id="progressSub">0 / 0 บทเรียน</div>
+            </div>
+        </div>
+        <ul class="lesson-list" id="lessonList">
+            <li class="lesson-item loading">
+                <span class="spinner"></span> กำลังโหลด...
+            </li>
+        </ul>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="content">
+
+        <!-- loading -->
+        <div class="content-loading" id="contentLoading">
+            <span class="spinner lg"></span>
+            <p>กำลังโหลดบทเรียน...</p>
+        </div>
+
+        <!-- lesson body (hidden until loaded) -->
+        <article class="lesson-body" id="lessonBody" style="display:none;">
+
+            <header class="lesson-header">
+                <div class="lesson-number" id="lessonNumber">บทที่ –</div>
+                <h1 class="lesson-title" id="lessonTitle">กำลังโหลด...</h1>
+                <p class="lesson-desc" id="lessonDesc"></p>
+            </header>
+
+            <!-- MEDIA LINKS -->
+            <section class="media-section" id="mediaSection">
+                <!-- injected by JS -->
+            </section>
+
+            <!-- VIDEO EMBED -->
+            <section class="video-section" id="videoSection" style="display:none;">
+                <div class="section-label">📹 วิดีโอบทเรียน</div>
+                <div class="video-wrap">
+                    <iframe id="videoFrame" src="" allowfullscreen
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+                    </iframe>
+                </div>
+            </section>
+
+            <!-- COMPLETE BUTTON ZONE -->
+            <div class="complete-zone" id="completeZone">
+                <div class="complete-card" id="completeCard">
+                    <div class="complete-card-text">
+                        <div class="complete-card-title">เรียนจบบทเรียนนี้แล้วใช่ไหม?</div>
+                        <div class="complete-card-sub">กดปุ่มด้านล่างเพื่อบันทึกความคืบหน้าของคุณ</div>
+                    </div>
+                    <button class="btn-complete" id="btnComplete">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.6"/>
+                            <path d="M5.5 9L7.8 11.5L12.5 6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span id="btnCompleteText">ตกลง — เรียนจบแล้ว</span>
+                    </button>
+                </div>
+
+                <!-- already completed state -->
+                <div class="completed-badge" id="completedBadge" style="display:none;">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <circle cx="10" cy="10" r="9" fill="var(--green)" fill-opacity=".15"/>
+                        <circle cx="10" cy="10" r="9" stroke="var(--green)" stroke-width="1.5"/>
+                        <path d="M6 10L8.5 12.5L14 7" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    เรียนจบบทเรียนนี้แล้ว
+                </div>
+            </div>
+
+            <!-- NAV BUTTONS -->
+            <div class="lesson-nav">
+                <button class="btn-nav" id="btnPrev">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    บทก่อนหน้า
+                </button>
+                <button class="btn-nav next" id="btnNext">
+                    บทถัดไป
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+        </article>
+    </main>
+</div>
+
+<!-- ══════════ TOAST ══════════ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="index.js"></script>
+</body>
+</html>
