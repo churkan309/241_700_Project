@@ -4,13 +4,9 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2/promise');
-const app = express();
 
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'x-user-role']
-}));
+const app = express();
+app.use(cors());
 app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 8000;
@@ -114,7 +110,7 @@ app.put('/users/:userId', async (req, res) => {
 
 app.delete('/users/:userId', async (req, res) => {
     try {
-        await db.query('DELETE FROM lesson_progress WHERE student_id = ?', [req.params.userId]);
+        await db.query('DELETE FROM lesson_completions WHERE student_id = ?', [req.params.userId]);
         await db.query('DELETE FROM enrollments WHERE student_id = ?', [req.params.userId]);
         await db.query('DELETE FROM users WHERE user_id = ?', [req.params.userId]);
         res.json({ message: 'ลบบัญชีผู้ใช้สำเร็จ' });
@@ -123,7 +119,7 @@ app.delete('/users/:userId', async (req, res) => {
     }
 });
 
-// ===================== COURSES =====================
+// ===================== COURSES (Public) =====================
 
 app.get('/courses', async (req, res) => {
     try {
@@ -181,16 +177,7 @@ app.put('/teacher/courses/:courseId', requireRole('teacher'), async (req, res) =
 app.delete('/teacher/courses/:courseId', requireRole('teacher'), async (req, res) => {
     try {
         const { courseId } = req.params;
-
-        const [lessonRows] = await db.query(
-            'SELECT lesson_id FROM lessons WHERE course_id = ?',
-            [courseId]
-        );
-        if (lessonRows.length > 0) {
-            const lessonIds = lessonRows.map((l) => l.lesson_id);
-            await db.query('DELETE FROM lesson_progress WHERE lesson_id IN (?)', [lessonIds]);
-        }
-
+        await db.query('DELETE FROM lesson_completions WHERE course_id = ?', [courseId]);
         await db.query('DELETE FROM enrollments WHERE course_id = ?', [courseId]);
         await db.query('DELETE FROM lessons WHERE course_id = ?', [courseId]);
         await db.query('DELETE FROM courses WHERE course_id = ?', [courseId]);
@@ -200,71 +187,7 @@ app.delete('/teacher/courses/:courseId', requireRole('teacher'), async (req, res
     }
 });
 
-// ดึงข้อมูลรายวิชา + รายชื่อนักเรียนพร้อมเปอร์เซ็นต์ความคืบหน้าของแต่ละคน
-app.get('/teacher/courses/:courseId/details', requireRole('teacher'), async (req, res) => {
-    try {
-        const { courseId } = req.params;
-
-        const [courseRows] = await db.query(
-            'SELECT * FROM courses WHERE course_id = ?',
-            [courseId]
-        );
-        if (courseRows.length === 0) return res.status(404).json({ message: 'ไม่พบรายวิชา' });
-
-        const [totalRows] = await db.query(
-            'SELECT COUNT(*) AS total FROM lessons WHERE course_id = ?',
-            [courseId]
-        );
-        const totalLessons = totalRows[0].total;
-
-        const [studentRows] = await db.query(
-            `SELECT
-                u.user_id,
-                u.firstname,
-                u.lastname,
-                u.email,
-                COUNT(lp.progress_id) AS completed_lessons
-             FROM enrollments e
-             JOIN users u ON e.student_id = u.user_id
-             LEFT JOIN lesson_progress lp
-                ON lp.student_id = u.user_id
-                AND lp.is_completed = 1
-                AND lp.lesson_id IN (SELECT lesson_id FROM lessons WHERE course_id = ?)
-             WHERE e.course_id = ?
-             GROUP BY u.user_id, u.firstname, u.lastname, u.email`,
-            [courseId, courseId]
-        );
-
-        const studentsWithProgress = studentRows.map((student) => ({
-            ...student,
-            progress_percent: totalLessons > 0
-                ? Math.round((student.completed_lessons / totalLessons) * 100)
-                : 0,
-        }));
-
-        res.json({
-            course: courseRows[0],
-            total_lessons: totalLessons,
-            enrolled_students: studentsWithProgress,
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'เกิดข้อผิดพลาดในการดึงข้อมูลรายวิชา', error: error.message });
-    }
-});
-
-app.delete('/teacher/courses/:courseId/students/:studentId', requireRole('teacher'), async (req, res) => {
-    try {
-        const { courseId, studentId } = req.params;
-        await db.query(
-            'DELETE FROM enrollments WHERE course_id = ? AND student_id = ?',
-            [courseId, studentId]
-        );
-        res.json({ message: 'ลบนักศึกษาออกจากรายวิชาสำเร็จ' });
-    } catch (error) {
-        res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลบนักศึกษา', error: error.message });
-    }
-});
-
+// Tab 1: Lessons
 app.get('/teacher/courses/:courseId/lessons', requireRole('teacher'), async (req, res) => {
     try {
         const [rows] = await db.query(
@@ -315,7 +238,7 @@ app.put('/teacher/lessons/:lessonId', requireRole('teacher'), async (req, res) =
 
 app.delete('/teacher/lessons/:lessonId', requireRole('teacher'), async (req, res) => {
     try {
-        await db.query('DELETE FROM lesson_progress WHERE lesson_id = ?', [req.params.lessonId]);
+        await db.query('DELETE FROM lesson_completions WHERE lesson_id = ?', [req.params.lessonId]);
         await db.query('DELETE FROM lessons WHERE lesson_id = ?', [req.params.lessonId]);
         res.json({ message: 'ลบบทเรียนสำเร็จ' });
     } catch (error) {
@@ -323,18 +246,97 @@ app.delete('/teacher/lessons/:lessonId', requireRole('teacher'), async (req, res
     }
 });
 
+// Tab 2: Students พร้อมแสดง progress ของแต่ละคน
+app.get('/teacher/courses/:courseId/students', requireRole('teacher'), async (req, res) => {
+    try {
+        const { courseId } = req.params;
+
+        const [courseRows] = await db.query(
+            'SELECT * FROM courses WHERE course_id = ?',
+            [courseId]
+        );
+        if (courseRows.length === 0) return res.status(404).json({ message: 'ไม่พบรายวิชา' });
+
+        const [totalRows] = await db.query(
+            'SELECT COUNT(*) AS total FROM lessons WHERE course_id = ?',
+            [courseId]
+        );
+        const totalLessons = totalRows[0].total;
+
+        const [studentRows] = await db.query(
+            `SELECT
+                u.user_id, u.firstname, u.lastname, u.email,
+                COUNT(lc.lesson_id) AS completed_lessons
+             FROM enrollments e
+             JOIN users u ON e.student_id = u.user_id
+             LEFT JOIN lesson_completions lc
+                ON lc.student_id = u.user_id AND lc.course_id = ?
+             WHERE e.course_id = ?
+             GROUP BY u.user_id`,
+            [courseId, courseId]
+        );
+
+        const students = studentRows.map((s) => ({
+            ...s,
+            total_lessons: totalLessons,
+            progress_percent: totalLessons > 0
+                ? Math.round((s.completed_lessons / totalLessons) * 100)
+                : 0,
+        }));
+
+        res.json({ course: courseRows[0], students });
+    } catch (error) {
+        res.status(500).json({ message: 'เกิดข้อผิดพลาดในการดึงข้อมูลนักเรียน', error: error.message });
+    }
+});
+
+app.delete('/teacher/courses/:courseId/students/:studentId', requireRole('teacher'), async (req, res) => {
+    try {
+        const { courseId, studentId } = req.params;
+        await db.query(
+            'DELETE FROM lesson_completions WHERE course_id = ? AND student_id = ?',
+            [courseId, studentId]
+        );
+        await db.query(
+            'DELETE FROM enrollments WHERE course_id = ? AND student_id = ?',
+            [courseId, studentId]
+        );
+        res.json({ message: 'ลบนักศึกษาออกจากรายวิชาสำเร็จ' });
+    } catch (error) {
+        res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลบนักศึกษา', error: error.message });
+    }
+});
+
 // ===================== STUDENT =====================
 
+// Dashboard: รายวิชาที่ลงทะเบียน + progress แต่ละวิชา
 app.get('/student/enrollments/:studentId', requireRole('student'), async (req, res) => {
     try {
+        const { studentId } = req.params;
+
         const [rows] = await db.query(
-            `SELECT e.*, c.title, c.description
+            `SELECT
+                e.enroll_id, c.course_id, c.title, c.description,
+                COUNT(DISTINCT l.lesson_id) AS total_lessons,
+                COUNT(DISTINCT lc.lesson_id) AS completed_lessons
              FROM enrollments e
              JOIN courses c ON e.course_id = c.course_id
-             WHERE e.student_id = ?`,
-            [req.params.studentId]
+             LEFT JOIN lessons l ON l.course_id = c.course_id
+             LEFT JOIN lesson_completions lc
+                ON lc.course_id = c.course_id AND lc.student_id = e.student_id
+             WHERE e.student_id = ?
+             GROUP BY e.enroll_id`,
+            [studentId]
         );
-        res.json(rows);
+
+        const enrollments = rows.map((row) => ({
+            ...row,
+            progress_percent: row.total_lessons > 0
+                ? Math.round((row.completed_lessons / row.total_lessons) * 100)
+                : 0,
+        }));
+
+        res.json(enrollments);
     } catch (error) {
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการดึงรายวิชาที่ลงทะเบียน', error: error.message });
     }
@@ -353,16 +355,7 @@ app.post('/student/enroll', requireRole('student'), async (req, res) => {
         );
         if (existing.length > 0) return res.status(409).json({ message: 'คุณลงทะเบียนรายวิชานี้ไปแล้ว' });
 
-        await db.query('INSERT INTO enrollments SET ?', [{
-            student_id,
-            course_id,
-            attendance_score: 0,
-            assignment_score: 0,
-            quiz_score: 0,
-            midterm_score: 0,
-            final_score: 0,
-            teacher_comment: '',
-        }]);
+        await db.query('INSERT INTO enrollments SET ?', [{ student_id, course_id }]);
         res.status(201).json({ message: 'ลงทะเบียนสำเร็จ' });
     } catch (error) {
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลงทะเบียน', error: error.message });
@@ -373,6 +366,10 @@ app.delete('/student/enrollments/:studentId/:courseId', requireRole('student'), 
     try {
         const { studentId, courseId } = req.params;
         await db.query(
+            'DELETE FROM lesson_completions WHERE student_id = ? AND course_id = ?',
+            [studentId, courseId]
+        );
+        await db.query(
             'DELETE FROM enrollments WHERE student_id = ? AND course_id = ?',
             [studentId, courseId]
         );
@@ -382,7 +379,7 @@ app.delete('/student/enrollments/:studentId/:courseId', requireRole('student'), 
     }
 });
 
-// ดึงข้อมูลวิชา + รายการบทเรียนพร้อมสถานะว่าเรียนแล้วหรือยัง + ความคืบหน้ารวม
+// หน้าเรียน: วิชา + บทเรียนทั้งหมด + สถานะว่าเรียนแล้วหรือยัง + progress รวม
 app.get('/student/courses/:courseId/:studentId', requireRole('student'), async (req, res) => {
     try {
         const { courseId, studentId } = req.params;
@@ -394,12 +391,11 @@ app.get('/student/courses/:courseId/:studentId', requireRole('student'), async (
         if (courseRows.length === 0) return res.status(404).json({ message: 'ไม่พบรายวิชา' });
 
         const [lessonRows] = await db.query(
-            `SELECT
-                l.*,
-                COALESCE(lp.is_completed, 0) AS is_completed
+            `SELECT l.*,
+                CASE WHEN lc.lesson_id IS NOT NULL THEN true ELSE false END AS is_completed
              FROM lessons l
-             LEFT JOIN lesson_progress lp
-                ON l.lesson_id = lp.lesson_id AND lp.student_id = ?
+             LEFT JOIN lesson_completions lc
+                ON lc.lesson_id = l.lesson_id AND lc.student_id = ?
              WHERE l.course_id = ?`,
             [studentId, courseId]
         );
@@ -413,18 +409,14 @@ app.get('/student/courses/:courseId/:studentId', requireRole('student'), async (
         res.json({
             course: courseRows[0],
             lessons: lessonRows,
-            progress: {
-                completed: completedLessons,
-                total: totalLessons,
-                percent: progressPercent,
-            },
+            progress: { completed_lessons: completedLessons, total_lessons: totalLessons, progress_percent: progressPercent },
         });
     } catch (error) {
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการดึงข้อมูลรายวิชา', error: error.message });
     }
 });
 
-// ดึงบทเรียนเดี่ยว
+// ดูเนื้อหาบทเรียน
 app.get('/student/courses/:courseId/lessons/:lessonId', requireRole('student'), async (req, res) => {
     try {
         const { courseId, lessonId } = req.params;
@@ -439,35 +431,47 @@ app.get('/student/courses/:courseId/lessons/:lessonId', requireRole('student'), 
     }
 });
 
-// นักเรียนกด "ตกลง" เพื่อบันทึกว่าเรียนบทเรียนนี้เสร็จแล้ว
-app.post('/student/lessons/:lessonId/complete', requireRole('student'), async (req, res) => {
+// กด "ตกลง" เพื่อบันทึกว่าเรียนบทเรียนนี้แล้ว — ส่ง progress กลับมาด้วย
+app.post('/student/courses/:courseId/lessons/:lessonId/complete', requireRole('student'), async (req, res) => {
     try {
-        const { lessonId } = req.params;
+        const { courseId, lessonId } = req.params;
         const { student_id } = req.body;
 
         if (!student_id) return res.status(400).json({ message: 'กรุณาระบุ student_id' });
 
-        const [existing] = await db.query(
-            'SELECT progress_id FROM lesson_progress WHERE student_id = ? AND lesson_id = ?',
-            [student_id, lessonId]
+        const [alreadyDone] = await db.query(
+            'SELECT id FROM lesson_completions WHERE student_id = ? AND lesson_id = ? AND course_id = ?',
+            [student_id, lessonId, courseId]
         );
-
-        if (existing.length > 0) {
-            await db.query(
-                'UPDATE lesson_progress SET is_completed = 1 WHERE student_id = ? AND lesson_id = ?',
-                [student_id, lessonId]
-            );
-        } else {
-            await db.query('INSERT INTO lesson_progress SET ?', [{
-                student_id,
-                lesson_id: lessonId,
-                is_completed: 1,
-            }]);
+        if (alreadyDone.length > 0) {
+            return res.status(409).json({ message: 'บันทึกไว้แล้ว' });
         }
 
-        res.json({ message: 'บันทึกความคืบหน้าสำเร็จ' });
+        await db.query('INSERT INTO lesson_completions SET ?', [{
+            student_id,
+            lesson_id: lessonId,
+            course_id: courseId,
+            completed_at: new Date(),
+        }]);
+
+        const [[{ total_lessons }]] = await db.query(
+            'SELECT COUNT(*) AS total_lessons FROM lessons WHERE course_id = ?',
+            [courseId]
+        );
+        const [[{ completed_lessons }]] = await db.query(
+            'SELECT COUNT(*) AS completed_lessons FROM lesson_completions WHERE student_id = ? AND course_id = ?',
+            [student_id, courseId]
+        );
+        const progressPercent = total_lessons > 0
+            ? Math.round((completed_lessons / total_lessons) * 100)
+            : 0;
+
+        res.status(201).json({
+            message: 'บันทึกการเรียนสำเร็จ',
+            progress: { completed_lessons, total_lessons, progress_percent: progressPercent },
+        });
     } catch (error) {
-        res.status(500).json({ message: 'เกิดข้อผิดพลาดในการบันทึกความคืบหน้า', error: error.message });
+        res.status(500).json({ message: 'เกิดข้อผิดพลาดในการบันทึกการเรียน', error: error.message });
     }
 });
 
