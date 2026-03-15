@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="reg.css">
+</head>
+
+<body>
+    <!DOCTYPE html>
+    <html lang="th">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Register - Online Course</title>
+        <link rel="stylesheet" href="style.css">
+        <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    </head>
+
+    <body>
+
+        <div class="register-container">
+            <div class="register-card">
+                <h2>สร้างบัญชีผู้ใช้งาน</h2>
+                <p>เลือกประเภทสมาชิกที่ต้องการสมัคร</p>
+
+                <form id="registerForm">
+                    <div class="role-selection">
+                        <label class="role-item">
+                            <input type="radio" name="role" value="student" checked>
+                            <div class="role-box">
+                                <span class="icon">🎓</span>
+                                <span>นักเรียน</span>
+                            </div>
+                        </label>
+
+                        <label class="role-item">
+                            <input type="radio" name="role" value="teacher">
+                            <div class="role-box">
+                                <span class="icon">👨‍🏫</span>
+                                <span>อาจารย์</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" placeholder="ชื่อ-นามสกุล" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="email" placeholder="อีเมล" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" placeholder="รหัสผ่าน" required>
+                    </div>
+
+                    <button type="submit" class="btn-register">สมัครสมาชิก</button>
+                </form>
+
+                <div class="footer-link">
+                    มีบัญชีอยู่แล้ว? <a href="../Login/index.html">เข้าสู่ระบบ</a>
+                </div>
+                
+            </div>
+        </div>
+    </body>
+
+    </html>

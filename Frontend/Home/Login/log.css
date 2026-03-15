@@ -1,0 +1,157 @@
+/* นำเข้าฟอนต์ Kanit จาก Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Kanit', sans-serif;
+}
+
+body {
+    /* พื้นหลังสีฟ้าอ่อนไล่ระดับ แบบเดียวกับในรูป */
+    background: linear-gradient(135deg, #eef2f9 0%, #d8e2f0 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- Container & Card --- */
+.auth-container {
+    width: 100%;
+    max-width: 450px; 
+    padding: 20px;
+}
+
+.auth-card {
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 16px; /* ขอบโค้งมนตามรูป */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); /* เงาฟุ้งๆ อ่อนๆ ให้ดูมีมิติ */
+    text-align: center;
+}
+
+.auth-card h2 {
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+}
+
+.auth-card p.subtitle {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    font-weight: 400;
+    margin-bottom: 25px;
+}
+
+/* --- Role Selection (สำหรับหน้า Register) --- */
+.role-selection {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.role-item {
+    flex: 1;
+    cursor: pointer;
+}
+
+.role-item input {
+    display: none; /* ซ่อน radio button มาตรฐาน */
+}
+
+.role-box {
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #555;
+    font-weight: 500;
+}
+
+.role-box .icon {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+}
+
+/* เมื่อผู้ใช้คลิกเลือก Role */
+.role-item input:checked + .role-box {
+    border-color: #4a8bf5;
+    background-color: #f4f8ff; /* พื้นหลังสีฟ้าอ่อนๆ ตอนเลือก */
+    color: #4a8bf5;
+    box-shadow: 0 0 0 1px #4a8bf5;
+}
+
+/* --- Input Fields --- */
+.input-group {
+    margin-bottom: 16px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #333;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-group input::placeholder {
+    color: #adb5bd;
+}
+
+/* เอฟเฟกต์ตอนคลิกพิมพ์ */
+.input-group input:focus {
+    border-color: #4a8bf5;
+    box-shadow: 0 0 0 3px rgba(74, 139, 245, 0.1);
+}
+
+/* --- Button --- */
+.btn-submit {
+    width: 100%;
+    padding: 14px;
+    background-color: #4a8bf5; /* สีปุ่มตามรูป */
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    margin-top: 8px;
+}
+
+.btn-submit:hover {
+    background-color: #3578e5; /* สีเข้มขึ้นตอนเอาเมาส์ชี้ */
+}
+
+.btn-submit:active {
+    transform: scale(0.98); /* ปุ่มยุบลงเล็กน้อยตอนกด */
+}
+
+/* --- Footer Link --- */
+.footer-link {
+    margin-top: 25px;
+    font-size: 0.85rem;
+    color: #7f8c8d;
+}
+
+.footer-link a {
+    color: #4a8bf5;
+    text-decoration: none;
+    font-weight: 500;
+    margin-left: 5px;
+    transition: color 0.2s;
+}
+
+.footer-link a:hover {
+    color: #3578e5;
+    text-decoration: underline;
+}
