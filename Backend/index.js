@@ -1,4 +1,4 @@
-
+require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
@@ -14,11 +14,11 @@ let db = null;
 
 const connectDB = async () => {
     db = await mysql.createConnection({
-        host: 'localhost',
-        user: 'root',
-        password: 'root',
-        database: 'Project',
-        port: 8700
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
+        port: Number(process.env.DB_PORT),
     });
     console.log('Connected to MySQL database');
 };
@@ -467,8 +467,6 @@ app.get('/student/courses/:courseId/score/:studentId', requireRole('student'), a
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการดึงคะแนน', error: error.message });
     }
 });
-
-// ===================== START =====================
 
 app.listen(PORT, async () => {
     await connectDB();
