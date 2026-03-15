@@ -9,9 +9,8 @@
 }
 
 body {
-    /* พื้นหลังสีฟ้าอ่อนไล่ระดับ แบบเดียวกับในรูป */
-    background: linear-gradient(135deg, #eef2f9 0%, #d8e2f0 100%);
-    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
