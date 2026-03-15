@@ -6,7 +6,11 @@ const bodyParser = require('body-parser');
 const mysql = require('mysql2/promise');
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'x-user-role']
+}));
 app.use(bodyParser.json());
 
 const PORT = 8000;
