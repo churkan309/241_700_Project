@@ -2,11 +2,11 @@ const BASE_URL = 'http://localhost:8000';
 
 // ── Auth guard ──
 const user = {
-    id:        localStorage.getItem('user_id'),
+    id: localStorage.getItem('user_id'),
     firstname: localStorage.getItem('firstname'),
-    lastname:  localStorage.getItem('lastname'),
-    email:     localStorage.getItem('email'),
-    role:      localStorage.getItem('role'),
+    lastname: localStorage.getItem('lastname'),
+    email: localStorage.getItem('email'),
+    role: localStorage.getItem('role'),
 };
 
 if (!user.id || user.role !== 'student') {
@@ -17,21 +17,23 @@ if (!user.id || user.role !== 'student') {
 axios.defaults.headers.common['x-user-role'] = 'student';
 
 // ── DOM refs ──
-const heroName      = document.getElementById('heroName');
-const topbarName    = document.getElementById('topbarName');
+const heroName = document.getElementById('heroName');
+const topbarName = document.getElementById('topbarName');
 const avatarInitial = document.getElementById('avatarInitial');
-const statTotal     = document.getElementById('statTotal');
-const statId        = document.getElementById('statId');
-const tableBody     = document.getElementById('courseTableBody');
+const statTotal = document.getElementById('statTotal');
+const statId = document.getElementById('statId');
+const tableBody = document.getElementById('courseTableBody');
+const statEmail = document.getElementById('statEmail');
 
 // ─────────────────────────────────────────
 //  INIT
 // ─────────────────────────────────────────
 function initUI() {
-    heroName.textContent      = `${user.firstname} ${user.lastname}`;
-    topbarName.textContent    = `${user.firstname} ${user.lastname}`;
+    heroName.textContent = `${user.firstname} ${user.lastname}`;
+    topbarName.textContent = `${user.firstname} ${user.lastname}`;
     avatarInitial.textContent = (user.firstname?.[0] || '') + (user.lastname?.[0] || '');
-    statId.textContent        = `#${user.id}`;
+    statId.textContent = `#${user.id}`;
+    statEmail.textContent = user.email || '–';
     loadEnrollments();
 }
 
@@ -41,8 +43,8 @@ function initUI() {
 function renderProgress(pct, completed, total) {
     // สีแถบเปลี่ยนตามเปอร์เซ็นต์
     const color = pct >= 100 ? 'var(--green)'
-                : pct >= 50  ? 'var(--accent)'
-                :              'var(--orange)';
+        : pct >= 50 ? 'var(--accent)'
+            : 'var(--orange)';
 
     return `
         <div style="min-width:140px;">
@@ -115,13 +117,13 @@ async function loadEnrollments() {
                 </td>
                 <td>
                     ${renderProgress(
-                        e.progress_percent    ?? 0,
-                        e.completed_lessons   ?? 0,
-                        e.total_lessons       ?? 0
-                    )}
+            e.progress_percent ?? 0,
+            e.completed_lessons ?? 0,
+            e.total_lessons ?? 0
+        )}
                 </td>
                 <td>
-                    <button class="btn-view" onclick="viewCourse(${e.course_id})">ดูบทเรียน</button>
+                    <button class="btn-view" onclick="viewLesson(${e.course_id})">ดูบทเรียน</button>
                     <button class="btn-drop" onclick="openDropConfirm(${e.course_id},'${escHtml(e.title)}')">ถอน</button>
                 </td>
             </tr>
@@ -147,7 +149,7 @@ function openDropConfirm(courseId, courseName) {
 document.getElementById('btnConfirmDrop').addEventListener('click', async () => {
     if (!pendingDropCourseId) return;
     const btn = document.getElementById('btnConfirmDrop');
-    btn.disabled    = true;
+    btn.disabled = true;
     btn.textContent = 'กำลังถอน...';
     try {
         await axios.delete(`${BASE_URL}/student/enrollments/${user.id}/${pendingDropCourseId}`);
@@ -157,7 +159,7 @@ document.getElementById('btnConfirmDrop').addEventListener('click', async () => 
     } catch (err) {
         toast(err.response?.data?.message || 'ถอนรายวิชาไม่สำเร็จ', 'error');
     } finally {
-        btn.disabled    = false;
+        btn.disabled = false;
         btn.textContent = 'ถอนรายวิชา';
         pendingDropCourseId = null;
     }
@@ -168,8 +170,8 @@ document.getElementById('btnCancelDrop').addEventListener('click', () => closeMo
 // ─────────────────────────────────────────
 //  VIEW COURSE
 // ─────────────────────────────────────────
-function viewCourse(courseId) {
-    window.location.href = `../Course/index.html?courseId=${courseId}`;
+function viewLesson(courseId) {
+    window.location.href = `../Lesson/index.html?courseId=${courseId}`;
 }
 
 // ─────────────────────────────────────────
@@ -215,7 +217,7 @@ async function openBrowse() {
 }
 
 async function enrollCourse(courseId, courseTitle, btn) {
-    btn.disabled    = true;
+    btn.disabled = true;
     btn.textContent = 'กำลังลง...';
     try {
         await axios.post(`${BASE_URL}/student/enroll`, { student_id: user.id, course_id: courseId });
@@ -223,15 +225,15 @@ async function enrollCourse(courseId, courseTitle, btn) {
         enrolledCourseIds.add(courseId);
         btn.replaceWith((() => {
             const s = document.createElement('span');
-            s.className        = 'badge badge-enrolled';
+            s.className = 'badge badge-enrolled';
             s.style.flexShrink = '0';
-            s.textContent      = 'ลงทะเบียนแล้ว';
+            s.textContent = 'ลงทะเบียนแล้ว';
             return s;
         })());
         loadEnrollments();
     } catch (err) {
         toast(err.response?.data?.message || 'ลงทะเบียนไม่สำเร็จ', 'error');
-        btn.disabled    = false;
+        btn.disabled = false;
         btn.textContent = '+ ลงทะเบียน';
     }
 }
@@ -244,43 +246,44 @@ document.getElementById('btnCancelProfile').addEventListener('click', () => clos
 
 function openProfileModal() {
     document.getElementById('inputFirstname').value = user.firstname || '';
-    document.getElementById('inputLastname').value  = user.lastname  || '';
-    document.getElementById('inputPassword').value  = '';
-    document.getElementById('inputEmail').value     = user.email     || '';
+    document.getElementById('inputLastname').value = user.lastname || '';
+    document.getElementById('inputPassword').value = '';
+    document.getElementById('inputEmail').value = user.email || '';
     openModal('profileModal');
 }
 
 document.getElementById('btnSaveProfile').addEventListener('click', async () => {
     const firstname = document.getElementById('inputFirstname').value.trim();
-    const lastname  = document.getElementById('inputLastname').value.trim();
-    const password  = document.getElementById('inputPassword').value.trim();
+    const lastname = document.getElementById('inputLastname').value.trim();
+    const password = document.getElementById('inputPassword').value.trim();
 
     if (!firstname || !lastname || !password) {
         toast('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
         return;
     }
 
-    const btn       = document.getElementById('btnSaveProfile');
-    btn.disabled    = true;
+    const btn = document.getElementById('btnSaveProfile');
+    btn.disabled = true;
     btn.textContent = 'กำลังบันทึก...';
 
     try {
         await axios.put(`${BASE_URL}/users/${user.id}`, { firstname, lastname, password });
         user.firstname = firstname;
-        user.lastname  = lastname;
+        user.lastname = lastname;
         localStorage.setItem('firstname', firstname);
-        localStorage.setItem('lastname',  lastname);
+        localStorage.setItem('lastname', lastname);
 
-        heroName.textContent      = `${firstname} ${lastname}`;
-        topbarName.textContent    = `${firstname} ${lastname}`;
+        heroName.textContent = `${firstname} ${lastname}`;
+        topbarName.textContent = `${firstname} ${lastname}`;
         avatarInitial.textContent = (firstname?.[0] || '') + (lastname?.[0] || '');
+        statEmail.textContent = user.email;
 
         closeModal('profileModal');
         toast('อัปเดตโปรไฟล์สำเร็จ');
     } catch (err) {
         toast(err.response?.data?.message || 'อัปเดตไม่สำเร็จ', 'error');
     } finally {
-        btn.disabled    = false;
+        btn.disabled = false;
         btn.textContent = 'บันทึก';
     }
 });
@@ -292,8 +295,8 @@ document.getElementById('btnDeleteAccount').addEventListener('click', async () =
     const confirmed = confirm('คุณต้องการลบบัญชีนี้ถาวรใช่หรือไม่?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้');
     if (!confirmed) return;
 
-    const btn       = document.getElementById('btnDeleteAccount');
-    btn.disabled    = true;
+    const btn = document.getElementById('btnDeleteAccount');
+    btn.disabled = true;
     btn.textContent = 'กำลังลบ...';
 
     try {
@@ -303,7 +306,7 @@ document.getElementById('btnDeleteAccount').addEventListener('click', async () =
         window.location.href = '../../Home/Login/index.html';
     } catch (err) {
         toast(err.response?.data?.message || 'ลบบัญชีไม่สำเร็จ', 'error');
-        btn.disabled    = false;
+        btn.disabled = false;
         btn.textContent = 'ลบบัญชี';
     }
 });
@@ -319,7 +322,7 @@ document.getElementById('btnLogout').addEventListener('click', () => {
 // ─────────────────────────────────────────
 //  HELPERS
 // ─────────────────────────────────────────
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
@@ -329,8 +332,8 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 });
 
 function toast(msg, type = 'success') {
-    const t       = document.createElement('div');
-    t.className   = `toast ${type === 'error' ? 'error' : ''}`;
+    const t = document.createElement('div');
+    t.className = `toast ${type === 'error' ? 'error' : ''}`;
     t.textContent = msg;
     document.getElementById('toastContainer').appendChild(t);
     setTimeout(() => t.remove(), 3500);
@@ -338,11 +341,11 @@ function toast(msg, type = 'success') {
 
 function escHtml(str) {
     return String(str)
-        .replace(/&/g,  '&amp;')
-        .replace(/</g,  '&lt;')
-        .replace(/>/g,  '&gt;')
-        .replace(/"/g,  '&quot;')
-        .replace(/'/g,  '&#39;');
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // ── Start ──

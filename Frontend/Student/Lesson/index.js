@@ -1,324 +1,318 @@
 const BASE_URL = 'http://localhost:8000';
 
-// ── Auth guard ──
 const user = {
-    id:   localStorage.getItem('user_id'),
-    role: localStorage.getItem('role'),
+    id:        localStorage.getItem('user_id'),
+    firstname: localStorage.getItem('firstname'),
+    lastname:  localStorage.getItem('lastname'),
+    role:      localStorage.getItem('role'),
 };
-if (!user.id || user.role !== 'student') {
+
+const params   = new URLSearchParams(window.location.search);
+const courseId = params.get('courseId');
+
+if (!user.id || user.role !== 'student' || !courseId) {
     window.location.href = '../../Home/Login/index.html';
 }
 
-// ── Axios header ──
 axios.defaults.headers.common['x-user-role'] = 'student';
 
-// ── Read URL params ──
-const params   = new URLSearchParams(window.location.search);
-const courseId = params.get('courseId');
-const lessonId = params.get('lessonId');   // optional: เปิดบทเรียนโดยตรง
-
-if (!courseId) {
-    window.location.href = '../../Dashboard/index.html';
-}
-
-// ── State ──
-let allLessons    = [];
-let currentLesson = null;
+let lessons       = [];
+let activeLessonIdx = 0;
 let progress      = { completed_lessons: 0, total_lessons: 0, progress_percent: 0 };
-
-// ── DOM refs ──
-const courseBreadcrumb = document.getElementById('courseBreadcrumb');
-const lessonList       = document.getElementById('lessonList');
-const progressFill     = document.getElementById('progressFill');
-const progressPct      = document.getElementById('progressPct');
-const progressSub      = document.getElementById('progressSub');
-const contentLoading   = document.getElementById('contentLoading');
-const lessonBody       = document.getElementById('lessonBody');
-const lessonNumber     = document.getElementById('lessonNumber');
-const lessonTitle      = document.getElementById('lessonTitle');
-const lessonDesc       = document.getElementById('lessonDesc');
-const mediaSection     = document.getElementById('mediaSection');
-const videoSection     = document.getElementById('videoSection');
-const videoFrame       = document.getElementById('videoFrame');
-const completeCard     = document.getElementById('completeCard');
-const completedBadge   = document.getElementById('completedBadge');
-const btnComplete      = document.getElementById('btnComplete');
-const btnCompleteText  = document.getElementById('btnCompleteText');
-const btnPrev          = document.getElementById('btnPrev');
-const btnNext          = document.getElementById('btnNext');
 
 // ─────────────────────────────────────────
 //  INIT
 // ─────────────────────────────────────────
-async function init() {
+function initUI() {
+    document.getElementById('topbarName').textContent    = `${user.firstname} ${user.lastname}`;
+    document.getElementById('avatarInitial').textContent =
+        (user.firstname?.[0] || '') + (user.lastname?.[0] || '');
+    loadCourse();
+}
+
+// ─────────────────────────────────────────
+//  LOAD COURSE + LESSONS
+// ─────────────────────────────────────────
+async function loadCourse() {
     try {
-        // โหลดข้อมูลรายวิชา + บทเรียนทั้งหมด พร้อม is_completed
-        const { data } = await axios.get(
-            `${BASE_URL}/student/courses/${courseId}/${user.id}`
-        );
+        const { data } = await axios.get(`${BASE_URL}/student/courses/${courseId}/${user.id}`);
+        lessons  = data.lessons  || [];
+        progress = data.progress || { completed_lessons: 0, total_lessons: 0, progress_percent: 0 };
 
-        courseBreadcrumb.textContent = data.course.title;
-        document.title = `${data.course.title} — OnlineCourse`;
-
-        allLessons = data.lessons;
-        progress   = data.progress;
-
+        renderCourseHero(data.course);
         renderSidebar();
-        updateProgress(progress);
 
-        // เลือกบทเรียนแรก หรือบทที่ระบุใน URL
-        const targetId = lessonId
-            ? allLessons.find(l => String(l.lesson_id) === String(lessonId))?.lesson_id
-            : allLessons[0]?.lesson_id;
-
-        if (targetId) openLesson(targetId);
-
+        if (lessons.length > 0) {
+            activeLessonIdx = 0;
+            renderContent(activeLessonIdx);
+        } else {
+            document.getElementById('lessonContent').innerHTML = `
+                <div class="panel-loading" style="flex-direction:column;gap:var(--space-3);min-height:320px;">
+                    <span style="font-size:2.5rem;">📭</span>
+                    <span style="color:var(--text-2);">รายวิชานี้ยังไม่มีบทเรียน</span>
+                </div>`;
+        }
     } catch (err) {
-        toast(err.response?.data?.message || 'โหลดข้อมูลไม่สำเร็จ', 'error');
+        document.getElementById('courseHero').innerHTML =
+            `<div style="color:var(--red);padding:var(--space-6);">
+                เกิดข้อผิดพลาด: ${err.response?.data?.message || err.message}
+            </div>`;
+        toast(err.response?.data?.message || 'โหลดรายวิชาไม่สำเร็จ', 'error');
     }
 }
 
 // ─────────────────────────────────────────
-//  SIDEBAR
+//  RENDER COURSE HERO
+// ─────────────────────────────────────────
+function renderCourseHero(course) {
+    const pct     = progress.progress_percent;
+    const pctClass = pct >= 100 ? 'done' : pct >= 50 ? 'half' : 'low';
+    const barColor = pct >= 100 ? 'green' : pct >= 50 ? '' : 'orange';
+
+    document.getElementById('courseHero').innerHTML = `
+        <div class="course-hero-top">
+            <div>
+                <div class="course-hero-title">${escHtml(course.title)}</div>
+                <div class="course-hero-desc">${escHtml(course.description || 'ไม่มีคำอธิบายรายวิชา')}</div>
+            </div>
+            <div class="progress-summary">
+                <div class="progress-big-pct ${pctClass}" id="bigPct">${pct}%</div>
+                <div class="progress-sub" id="progressSub">
+                    ${progress.completed_lessons} / ${progress.total_lessons} บทเรียน
+                </div>
+            </div>
+        </div>
+        <div class="progress-wrap-lg">
+            <div class="progress-bar-lg progress-bar ${barColor}" id="heroBar" style="width:${pct}%;"></div>
+        </div>`;
+}
+
+// ─────────────────────────────────────────
+//  RENDER SIDEBAR
 // ─────────────────────────────────────────
 function renderSidebar() {
-    if (allLessons.length === 0) {
-        lessonList.innerHTML = '<li class="lesson-item loading" style="cursor:default;justify-content:center;">ยังไม่มีบทเรียน</li>';
+    if (lessons.length === 0) {
+        document.getElementById('lessonSidebarList').innerHTML =
+            `<div style="padding:var(--space-6);text-align:center;color:var(--text-3);font-size:var(--text-xs);">
+                ยังไม่มีบทเรียน
+            </div>`;
         return;
     }
 
-    lessonList.innerHTML = allLessons.map((l, idx) => `
-        <li class="lesson-item ${l.is_completed ? 'completed' : ''} ${currentLesson?.lesson_id === l.lesson_id ? 'active' : ''}"
-            id="item-${l.lesson_id}"
-            onclick="openLesson(${l.lesson_id})">
-            <span class="lesson-num">${idx + 1}</span>
-            <span class="lesson-name">${escHtml(l.title)}</span>
-            <span class="lesson-check">${l.is_completed ? '✓' : ''}</span>
-        </li>
+    document.getElementById('lessonSidebarList').innerHTML = lessons.map((l, idx) => `
+        <div class="lesson-nav-item ${l.is_completed ? 'completed' : ''} ${idx === activeLessonIdx ? 'active' : ''}"
+             id="nav-${idx}" onclick="selectLesson(${idx})">
+            <div class="nav-check">
+                ${l.is_completed ? '✓' : `<span class="nav-num">${idx + 1}</span>`}
+            </div>
+            <div class="nav-title">${escHtml(l.title)}</div>
+        </div>
     `).join('');
 }
 
-function setActiveItem(lessonId) {
-    document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
-    const el = document.getElementById(`item-${lessonId}`);
-    if (el) {
-        el.classList.add('active');
-        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
+// ─────────────────────────────────────────
+//  RENDER LESSON CONTENT
+// ─────────────────────────────────────────
+function renderContent(idx) {
+    const l    = lessons[idx];
+    const prev = idx > 0;
+    const next = idx < lessons.length - 1;
+    const isDone = !!l.is_completed;
+
+    const resources = [
+        l.video_url    ? { type: 'video', icon: '🎬', label: 'วิดีโอบทเรียน',  url: l.video_url }    : null,
+        l.document_url ? { type: 'doc',   icon: '📄', label: 'เอกสารประกอบ',   url: l.document_url } : null,
+        l.quiz_url     ? { type: 'quiz',  icon: '📝', label: 'แบบทดสอบ',       url: l.quiz_url }     : null,
+    ].filter(Boolean);
+
+    document.getElementById('lessonContent').innerHTML = `
+        <div class="content-header">
+            <div class="content-lesson-num">บทที่ ${idx + 1} จาก ${lessons.length}</div>
+            <div class="content-lesson-title">${escHtml(l.title)}</div>
+        </div>
+
+        <div class="content-body">
+            ${l.description
+                ? `<p class="content-desc">${escHtml(l.description)}</p>`
+                : ''}
+
+            ${resources.length > 0 ? `
+                <div class="resources-title">สื่อการเรียน</div>
+                <div class="resource-list">
+                    ${resources.map(r => `
+                        <a href="${escHtml(r.url)}" target="_blank" rel="noopener"
+                           class="resource-card">
+                            <div class="resource-icon ${r.type}">${r.icon}</div>
+                            <div class="resource-info">
+                                <div class="resource-label">${r.label}</div>
+                                <div class="resource-url">${escHtml(r.url)}</div>
+                            </div>
+                            <div class="resource-arrow">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor"
+                                          stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </a>
+                    `).join('')}
+                </div>
+            ` : `
+                <div class="no-resource">ไม่มีสื่อประกอบบทเรียนนี้</div>
+            `}
+        </div>
+
+        <div class="content-footer">
+            <div class="nav-btns">
+                <button class="btn btn-ghost btn-sm" onclick="selectLesson(${idx - 1})"
+                    ${!prev ? 'disabled' : ''}>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.8"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    ก่อนหน้า
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="selectLesson(${idx + 1})"
+                    ${!next ? 'disabled' : ''}>
+                    ถัดไป
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="1.8"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <button class="btn-complete ${isDone ? 'done' : ''}"
+                    id="btnComplete" onclick="completeLesson(${l.lesson_id}, ${idx})"
+                    ${isDone ? 'disabled' : ''}>
+                ${isDone
+                    ? `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="2"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                       </svg> เรียนแล้ว`
+                    : `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="2"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                       </svg> เสร็จสิ้น`
+                }
+            </button>
+        </div>`;
 }
 
 // ─────────────────────────────────────────
-//  PROGRESS
+//  SELECT LESSON
 // ─────────────────────────────────────────
-function updateProgress(p) {
-    const pct = p.progress_percent ?? 0;
-    progressFill.style.width  = `${pct}%`;
-    progressPct.textContent   = `${pct}%`;
-    progressSub.textContent   = `${p.completed_lessons} / ${p.total_lessons} บทเรียน`;
+function selectLesson(idx) {
+    if (idx < 0 || idx >= lessons.length) return;
 
-    // เปลี่ยนสีแถบ
-    progressFill.style.background = pct >= 100 ? 'var(--green)'
-                                  : pct >= 50  ? 'var(--accent)'
-                                  :              'var(--orange)';
-    progressPct.style.color       = pct >= 100 ? 'var(--green)'
-                                  : pct >= 50  ? 'var(--accent)'
-                                  :              'var(--orange)';
+    document.querySelectorAll('.lesson-nav-item').forEach(el => el.classList.remove('active'));
+    const navEl = document.getElementById(`nav-${idx}`);
+    if (navEl) {
+        navEl.classList.add('active');
+        navEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    activeLessonIdx = idx;
+    renderContent(idx);
 }
 
 // ─────────────────────────────────────────
-//  OPEN LESSON
+//  COMPLETE LESSON
 // ─────────────────────────────────────────
-async function openLesson(id) {
-    // แสดง loading
-    contentLoading.style.display = 'flex';
-    lessonBody.style.display     = 'none';
-    setActiveItem(id);
-
-    try {
-        const { data: lesson } = await axios.get(
-            `${BASE_URL}/student/courses/${courseId}/lessons/${id}`
-        );
-        currentLesson = lesson;
-        renderLesson(lesson);
-    } catch (err) {
-        toast(err.response?.data?.message || 'โหลดบทเรียนไม่สำเร็จ', 'error');
-    }
-}
-
-function renderLesson(lesson) {
-    const idx = allLessons.findIndex(l => l.lesson_id === lesson.lesson_id);
-
-    // ── Header ──
-    lessonNumber.textContent = `บทที่ ${idx + 1}`;
-    lessonTitle.textContent  = lesson.title;
-    lessonDesc.textContent   = lesson.description || '';
-    lessonDesc.style.display = lesson.description ? 'block' : 'none';
-
-    // ── Media links ──
-    const links = [];
-    if (lesson.video_url && !isYouTube(lesson.video_url)) {
-        links.push(`<a href="${escHtml(lesson.video_url)}" target="_blank" class="media-link video">
-            🎬 <span>วิดีโอบทเรียน</span>
-        </a>`);
-    }
-    if (lesson.document_url) {
-        links.push(`<a href="${escHtml(lesson.document_url)}" target="_blank" class="media-link document">
-            📄 <span>เอกสารประกอบ</span>
-        </a>`);
-    }
-    if (lesson.quiz_url) {
-        links.push(`<a href="${escHtml(lesson.quiz_url)}" target="_blank" class="media-link quiz">
-            📝 <span>แบบทดสอบ</span>
-        </a>`);
-    }
-
-    if (links.length > 0) {
-        mediaSection.innerHTML = `
-            <div class="section-label">🔗 สื่อการสอน</div>
-            ${links.join('')}`;
-        mediaSection.style.display = 'block';
-    } else {
-        mediaSection.innerHTML = '';
-        mediaSection.style.display = 'none';
-    }
-
-    // ── YouTube embed ──
-    if (lesson.video_url && isYouTube(lesson.video_url)) {
-        const embedUrl = toYouTubeEmbed(lesson.video_url);
-        videoFrame.src        = embedUrl;
-        videoSection.style.display = 'block';
-    } else {
-        videoFrame.src        = '';
-        videoSection.style.display = 'none';
-    }
-
-    // ── Complete button ──
-    const lessonState = allLessons.find(l => l.lesson_id === lesson.lesson_id);
-    setCompleteState(lessonState?.is_completed ?? false);
-
-    // ── Prev / Next ──
-    btnPrev.disabled = idx === 0;
-    btnNext.disabled = idx === allLessons.length - 1;
-
-    // ── Show content ──
-    contentLoading.style.display = 'none';
-    lessonBody.style.display     = 'block';
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function setCompleteState(isDone) {
-    if (isDone) {
-        completeCard.style.display   = 'none';
-        completedBadge.style.display = 'flex';
-    } else {
-        completeCard.style.display   = 'flex';
-        completedBadge.style.display = 'none';
-        btnComplete.disabled    = false;
-        btnCompleteText.textContent  = 'ตกลง — เรียนจบแล้ว';
-    }
-}
-
-// ─────────────────────────────────────────
-//  MARK AS COMPLETED
-// ─────────────────────────────────────────
-btnComplete.addEventListener('click', async () => {
-    if (!currentLesson) return;
-
-    btnComplete.disabled   = true;
-    btnCompleteText.textContent = 'กำลังบันทึก...';
+async function completeLesson(lessonId, idx) {
+    const btn = document.getElementById('btnComplete');
+    btn.disabled    = true;
+    btn.textContent = 'กำลังบันทึก...';
 
     try {
         const { data } = await axios.post(
-            `${BASE_URL}/student/courses/${courseId}/lessons/${currentLesson.lesson_id}/complete`,
+            `${BASE_URL}/student/courses/${courseId}/lessons/${lessonId}/complete`,
             { student_id: user.id }
         );
 
-        // อัปเดต state ใน allLessons
-        const lesson = allLessons.find(l => l.lesson_id === currentLesson.lesson_id);
-        if (lesson) lesson.is_completed = true;
-
-        // อัปเดต progress
+        lessons[idx].is_completed = true;
         progress = data.progress;
-        updateProgress(progress);
 
-        // อัปเดต sidebar
-        const item = document.getElementById(`item-${currentLesson.lesson_id}`);
-        if (item) {
-            item.classList.add('completed');
-            item.querySelector('.lesson-check').textContent = '✓';
+        updateProgressUI();
+        renderSidebar();
+        renderContent(idx);
+        toast('บันทึกความคืบหน้าสำเร็จ ✓');
+
+        if (progress.progress_percent >= 100) {
+            setTimeout(() => toast('🎉 ยินดีด้วย! คุณเรียนครบทุกบทเรียนแล้ว'), 600);
         }
-
-        // แสดง badge
-        setCompleteState(true);
-        toast('บันทึกความคืบหน้าสำเร็จ 🎉');
 
     } catch (err) {
-        const msg = err.response?.data?.message || '';
         if (err.response?.status === 409) {
-            // บันทึกไว้แล้ว → แค่เปลี่ยนสถานะ
-            const lesson = allLessons.find(l => l.lesson_id === currentLesson.lesson_id);
-            if (lesson) lesson.is_completed = true;
-            setCompleteState(true);
+            lessons[idx].is_completed = true;
+            renderSidebar();
+            renderContent(idx);
         } else {
-            toast(msg || 'บันทึกไม่สำเร็จ', 'error');
-            btnComplete.disabled   = false;
-            btnCompleteText.textContent = 'ตกลง — เรียนจบแล้ว';
+            toast(err.response?.data?.message || 'บันทึกไม่สำเร็จ', 'error');
+            btn.disabled    = false;
+            btn.textContent = 'เสร็จสิ้น';
         }
     }
-});
+}
 
 // ─────────────────────────────────────────
-//  NAV PREV / NEXT
+//  UPDATE PROGRESS UI (ไม่ reload ทั้งหน้า)
 // ─────────────────────────────────────────
-btnPrev.addEventListener('click', () => {
-    if (!currentLesson) return;
-    const idx = allLessons.findIndex(l => l.lesson_id === currentLesson.lesson_id);
-    if (idx > 0) openLesson(allLessons[idx - 1].lesson_id);
-});
+function updateProgressUI() {
+    const pct      = progress.progress_percent;
+    const pctClass = pct >= 100 ? 'done' : pct >= 50 ? 'half' : 'low';
+    const barColor = pct >= 100 ? 'green' : pct >= 50 ? '' : 'orange';
 
-btnNext.addEventListener('click', () => {
-    if (!currentLesson) return;
-    const idx = allLessons.findIndex(l => l.lesson_id === currentLesson.lesson_id);
-    if (idx < allLessons.length - 1) openLesson(allLessons[idx + 1].lesson_id);
-});
+    const bigPct = document.getElementById('bigPct');
+    const sub    = document.getElementById('progressSub');
+    const bar    = document.getElementById('heroBar');
+
+    if (bigPct) {
+        bigPct.textContent = `${pct}%`;
+        bigPct.className   = `progress-big-pct ${pctClass}`;
+    }
+    if (sub) {
+        sub.textContent = `${progress.completed_lessons} / ${progress.total_lessons} บทเรียน`;
+    }
+    if (bar) {
+        bar.style.width = `${pct}%`;
+        bar.className   = `progress-bar-lg progress-bar ${barColor}`;
+    }
+}
 
 // ─────────────────────────────────────────
-//  BACK BUTTON
+//  NAVIGATION
 // ─────────────────────────────────────────
 document.getElementById('btnBack').addEventListener('click', () => {
+    window.location.href = '../Dashboard/index.html';
+});
+
+document.getElementById('btnLogout').addEventListener('click', () => {
+    localStorage.clear();
+    window.location.href = '../../Home/Login/index.html';
+});
+
+document.getElementById('btnProfile').addEventListener('click', () => {
     window.location.href = '../Dashboard/index.html';
 });
 
 // ─────────────────────────────────────────
 //  HELPERS
 // ─────────────────────────────────────────
-function isYouTube(url) {
-    return /youtube\.com|youtu\.be/.test(url);
-}
-
-function toYouTubeEmbed(url) {
-    // รองรับทั้ง youtube.com/watch?v= และ youtu.be/
-    const match = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-    return match ? `https://www.youtube.com/embed/${match[1]}` : url;
-}
-
 function toast(msg, type = 'success') {
-    const t       = document.createElement('div');
-    t.className   = `toast ${type === 'error' ? 'error' : ''}`;
+    const t = document.createElement('div');
+    t.className   = `toast${type === 'error' ? ' error' : ''}`;
     t.textContent = msg;
     document.getElementById('toastContainer').appendChild(t);
-    setTimeout(() => t.remove(), 3500);
+    setTimeout(() => t.remove(), 3800);
 }
 
 function escHtml(str) {
     return String(str)
-        .replace(/&/g,  '&amp;')
+        .replace(/&/g, '&amp;')
         .replace(/</g,  '&lt;')
         .replace(/>/g,  '&gt;')
         .replace(/"/g,  '&quot;')
         .replace(/'/g,  '&#39;');
 }
 
-// ── Start ──
-init();
+initUI();

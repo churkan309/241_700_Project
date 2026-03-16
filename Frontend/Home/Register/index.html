@@ -5,14 +5,127 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Online Course</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../../style.css">
+    <style>
+        .auth-wrap {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-4);
+        }
+
+        .auth-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--space-8);
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .auth-card h2 {
+            font-family: var(--font-display);
+            font-size: var(--text-2xl);
+            font-weight: 600;
+            color: var(--text-1);
+            margin-bottom: var(--space-2);
+        }
+
+        .auth-card > p {
+            color: var(--text-2);
+            font-size: var(--text-sm);
+            margin-bottom: var(--space-6);
+        }
+
+        .role-selection {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-3);
+            margin-bottom: var(--space-5);
+        }
+
+        .role-item {
+            cursor: pointer;
+        }
+
+        .role-item input[type="radio"] {
+            display: none;
+        }
+
+        .role-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-4) var(--space-3);
+            background: var(--bg-inset);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: var(--text-sm);
+            color: var(--text-2);
+            transition: var(--transition);
+        }
+
+        .role-box .icon {
+            font-size: 1.75rem;
+        }
+
+        .role-item input[type="radio"]:checked + .role-box {
+            border-color: var(--accent);
+            background: var(--accent-pale);
+            color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent);
+        }
+
+        .role-item:hover .role-box {
+            border-color: var(--text-3);
+            background: var(--bg-hover);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--accent);
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 11px;
+            color: var(--text-inverse);
+            font-family: var(--font-body);
+            font-size: var(--text-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: var(--space-2);
+            margin-bottom: var(--space-5);
+        }
+
+        .btn-submit:hover {
+            background: #7aaaff;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-accent);
+        }
+
+        .footer-link {
+            text-align: center;
+            font-size: var(--text-sm);
+            color: var(--text-2);
+        }
+
+        .footer-link a {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .footer-link a:hover {
+            color: var(--text-link-hover);
+        }
+    </style>
 </head>
 
 <body>
 
-    <div class="register-container">
-        <div class="register-card">
+    <div class="auth-wrap">
+        <div class="auth-card">
             <h2>สร้างบัญชีผู้ใช้งาน</h2>
             <p>เลือกประเภทสมาชิกที่ต้องการสมัคร</p>
 
@@ -25,7 +138,6 @@
                             <span>นักเรียน</span>
                         </div>
                     </label>
-
                     <label class="role-item">
                         <input type="radio" name="role" value="teacher">
                         <div class="role-box">
@@ -35,28 +147,28 @@
                     </label>
                 </div>
 
-                <div class="input-group">
-                    <input type="firstname" placeholder="ชื่อ" required>
+                <div class="form-group">
+                    <input class="form-input" type="text" placeholder="ชื่อ" required>
                 </div>
-                <div class="input-group">
-                    <input type="lastname" placeholder="นามสกุล" required>
+                <div class="form-group">
+                    <input class="form-input" type="text" placeholder="นามสกุล" required>
                 </div>
-                <div class="input-group">
-                    <input type="email" placeholder="อีเมล" required>
+                <div class="form-group">
+                    <input class="form-input" type="email" placeholder="อีเมล" required>
                 </div>
-                <div class="input-group">
-                    <input type="password" placeholder="รหัสผ่าน" required>
+                <div class="form-group">
+                    <input class="form-input" type="password" placeholder="รหัสผ่าน" required>
                 </div>
 
-                <button type="submit" class="btn-register">สมัครสมาชิก</button>
+                <button type="submit" class="btn-submit">สมัครสมาชิก</button>
             </form>
 
             <div class="footer-link">
                 มีบัญชีอยู่แล้ว? <a href="../Login/index.html">เข้าสู่ระบบ</a>
             </div>
-
         </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="index.js"></script>
 </body>

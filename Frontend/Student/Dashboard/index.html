@@ -5,63 +5,131 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard - Online Course</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../../../style.css">
+    <style>
+        .stat-value.sm {
+            font-size: var(--text-base);
+            font-weight: 400;
+            margin-top: var(--space-1);
+        }
+
+        .browse-list-inner {
+            overflow-y: auto;
+            max-height: 420px;
+        }
+
+        .browse-empty {
+            text-align: center;
+            padding: var(--space-8);
+            color: var(--text-2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+        }
+
+        .btn-delete {
+            flex: 1;
+            background: var(--red);
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 10px;
+            color: #fff;
+            font-family: var(--font-body);
+            font-size: var(--text-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-delete:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-confirm-drop {
+            flex: 1;
+            background: var(--red);
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 10px;
+            color: #fff;
+            font-family: var(--font-body);
+            font-size: var(--text-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-confirm-drop:hover {
+            filter: brightness(1.1);
+        }
+
+        .modal-close-btn {
+            flex: none;
+            padding: 10px 24px;
+        }
+    </style>
 </head>
 
 <body>
 
-    <!-- ══════════ TOPBAR ══════════ -->
     <header class="topbar">
-        <div class="logo">
+        <a class="logo" href="#">
             <div class="logo-dot"></div>
             OnlineCourse
-        </div>
+        </a>
         <div class="topbar-right">
             <button class="btn-profile" id="btnProfile">
-                <div class="avatar" id="avatarInitial">ST</div>
+                <div class="avatar avatar-sm" id="avatarInitial">ST</div>
                 <span id="topbarName">นักศึกษา</span>
             </button>
             <button class="btn-logout" id="btnLogout">ออกจากระบบ</button>
         </div>
     </header>
 
-    <!-- ══════════ MAIN ══════════ -->
     <main class="main">
 
-        <!-- HERO -->
         <div class="hero">
             <p class="hero-greeting">ยินดีต้อนรับกลับมา 👋</p>
             <h1 class="hero-name">สวัสดี, <span id="heroName">กำลังโหลด...</span></h1>
         </div>
 
-        <!-- STATS -->
-        <div class="stats-row">
+        <div class="stats-row anim-2">
             <div class="stat-card">
-                <div class="stat-label">รายวิชาที่ลงทะเบียน</div>
-                <div class="stat-value" id="statTotal">–</div>
+                <div class="stat-icon">📚</div>
+                <div class="stat-info">
+                    <div class="stat-label">รายวิชาที่ลงทะเบียน</div>
+                    <div class="stat-value" id="statTotal">–</div>
+                </div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">รหัสนักศึกษา</div>
-                <div class="stat-value orange" id="statId">–</div>
+                <div class="stat-icon">🆔</div>
+                <div class="stat-info">
+                    <div class="stat-label">รหัสนักศึกษา</div>
+                    <div class="stat-value" id="statId">–</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📧</div>
+                <div class="stat-info">
+                    <div class="stat-label">อีเมล</div>
+                    <div class="stat-value sm" id="statEmail">–</div>
+                </div>
             </div>
         </div>
 
-        <!-- TABLE SECTION -->
         <div class="section-header">
             <h2 class="section-title">รายวิชาของฉัน</h2>
             <button class="btn-browse" id="btnBrowse">
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                    <circle cx="7" cy="7" r="5.5" stroke="#0d1117" stroke-width="1.5" />
-                    <path d="M11 11L14.5 14.5" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round" />
+                    <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M11 11L14.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                 </svg>
                 ค้นหารายวิชาเพิ่มเติม
             </button>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap anim-3">
             <table>
                 <thead>
                     <tr>
@@ -79,12 +147,14 @@
                 </tbody>
             </table>
         </div>
+
     </main>
 
-    <!-- ══════════ PROFILE MODAL ══════════ -->
     <div class="modal-overlay" id="profileModal">
         <div class="modal">
-            <div class="modal-title">⚙️ จัดการโปรไฟล์</div>
+            <div class="modal-title">
+                ⚙️ จัดการโปรไฟล์
+            </div>
             <div class="form-group">
                 <label class="form-label">ชื่อ</label>
                 <input type="text" id="inputFirstname" class="form-input" placeholder="ชื่อ">
@@ -99,50 +169,49 @@
             </div>
             <div class="form-group">
                 <label class="form-label">อีเมล (แก้ไขไม่ได้)</label>
-                <input type="text" id="inputEmail" class="form-input" disabled style="opacity:.5">
+                <input type="text" id="inputEmail" class="form-input" disabled>
             </div>
             <div class="modal-actions">
                 <button class="btn-cancel" id="btnCancelProfile">ยกเลิก</button>
                 <button class="btn-save" id="btnSaveProfile">บันทึก</button>
-                <button class="btn-save" id="btnDeleteAccount"
-                    style="background:var(--red);color:#fff;">ลบบัญชี</button>
+                <button class="btn-delete" id="btnDeleteAccount">ลบบัญชี</button>
             </div>
         </div>
     </div>
 
-    <!-- ══════════ CONFIRM DROP MODAL ══════════ -->
     <div class="modal-overlay" id="confirmModal">
         <div class="modal">
-            <div class="modal-title">⚠️ ยืนยันการถอนรายวิชา</div>
+            <div class="modal-title">
+                ⚠️ ยืนยันการถอนรายวิชา
+            </div>
             <p class="confirm-text">
                 คุณต้องการถอนรายวิชา<br>
-                <span class="confirm-course-name" id="confirmCourseName"></span>
-                <br>ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้
+                <span class="confirm-course-name" id="confirmCourseName"></span><br>
+                ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้
             </p>
             <div class="modal-actions">
                 <button class="btn-cancel" id="btnCancelDrop">ยกเลิก</button>
-                <button class="btn-save" id="btnConfirmDrop"
-                    style="background:var(--red);color:#fff;">ถอนรายวิชา</button>
+                <button class="btn-confirm-drop" id="btnConfirmDrop">ถอนรายวิชา</button>
             </div>
         </div>
     </div>
 
-    <!-- ══════════ BROWSE MODAL ══════════ -->
     <div class="modal-overlay" id="browseModal">
-        <div class="modal" style="max-width:600px;">
-            <div class="modal-title">🔍 ค้นหารายวิชา</div>
-            <div style="overflow-y:auto;max-height:420px;" id="browseList">
-                <div style="text-align:center;padding:32px;color:var(--text-2);">
+        <div class="modal modal-lg">
+            <div class="modal-title">
+                🔍 ค้นหารายวิชา
+            </div>
+            <div class="browse-list-inner" id="browseList">
+                <div class="browse-empty">
                     <span class="spinner"></span> กำลังโหลด...
                 </div>
             </div>
             <div class="modal-actions">
-                <button class="btn-cancel" id="btnCloseBrowse" style="flex:none;padding:10px 24px;">ปิด</button>
+                <button class="btn-cancel modal-close-btn" id="btnCloseBrowse">ปิด</button>
             </div>
         </div>
     </div>
 
-    <!-- ══════════ TOAST ══════════ -->
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
