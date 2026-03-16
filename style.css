@@ -1,39 +1,39 @@
 @font-face {
   font-family: 'Kanit';
-  src: url('Kanit/') format('woff2'),
-       url('Kanit/Kanit-Light.woff') format('woff');
+  src: url('Kanit/') format('ttf2'),
+       url('Kanit/Kanit-Light.ttf') format('ttf');
   font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Kanit';
-  src: url('../fonts/Kanit-Regular.woff2') format('woff2'),
-       url('../fonts/Kanit-Regular.woff') format('woff');
+  src: url('./Kanit/Kanit-Regular.ttf2') format('ttf2'),
+       url('./Kanit/Kanit-Regular.ttf') format('ttf');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Kanit';
-  src: url('../fonts/Kanit-Medium.woff2') format('woff2'),
-       url('../fonts/Kanit-Medium.woff') format('woff');
+  src: url('./Kanit/Kanit-Medium.ttf2') format('ttf2'),
+       url('./Kanit/Kanit-Medium.ttf') format('ttf');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Kanit';
-  src: url('../fonts/Kanit-SemiBold.woff2') format('woff2'),
-       url('../fonts/Kanit-SemiBold.woff') format('woff');
+  src: url('./Kanit/Kanit-SemiBold.ttf2') format('ttf2'),
+       url('./Kanit/Kanit-SemiBold.ttf') format('ttf');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Kanit';
-  src: url('../fonts/Kanit-Bold.woff2') format('woff2'),
-       url('../fonts/Kanit-Bold.woff') format('woff');
+  src: url('./Kanit/Kanit-Bold.ttf2') format('ttf2'),
+       url('./Kanit/Kanit-Bold.ttf') format('ttf');
   font-weight: 700;
   font-style: normal;
   font-display: swap;

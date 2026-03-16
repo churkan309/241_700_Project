@@ -110,10 +110,15 @@ app.put('/users/:userId', requireSelf, async (req, res) => {
         if (!firstname || !lastname || !password) {
             return res.status(400).json({ message: 'กรุณากรอกข้อมูลให้ครบถ้วน' });
         }
-        await db.query(
+
+        const [result] = await db.query(
             'UPDATE users SET firstname = ?, lastname = ?, password = ? WHERE user_id = ?',
             [firstname, lastname, password, req.params.userId]
         );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'ไม่พบผู้ใช้งาน หรือคุณไม่มีสิทธิ์แก้ไขข้อมูลนี้' });
+        }
         res.json({ message: 'อัปเดตข้อมูลส่วนตัวสำเร็จ' });
     } catch (error) {
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการอัปเดตข้อมูล', error: error.message });
@@ -122,15 +127,16 @@ app.put('/users/:userId', requireSelf, async (req, res) => {
 
 app.delete('/users/:userId', requireSelf, async (req, res) => {
     try {
-        const [result] = await db.query(
-            'DELETE FROM users WHERE user_id = ?', [req.params.userId]
-        );
-        if (result.affectedRows === 0)
+        const userId = req.params.userId;
+        const [users] = await db.query('SELECT user_id FROM users WHERE user_id = ?', [userId]);
+
+        if (users.length === 0)
             return res.status(404).json({ message: 'ไม่พบผู้ใช้งาน' });
 
         await db.query('DELETE FROM lesson_completions WHERE student_id = ?', [req.params.userId]);
         await db.query('DELETE FROM enrollments WHERE student_id = ?', [req.params.userId]);
         await db.query('DELETE FROM users WHERE user_id = ?', [req.params.userId]);
+
         res.json({ message: 'ลบบัญชีผู้ใช้สำเร็จ' });
     } catch (error) {
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลบบัญชี', error: error.message });
@@ -200,17 +206,23 @@ app.put('/teacher/courses/:courseId', requireRole('teacher'), async (req, res) =
 
 app.delete('/teacher/courses/:courseId', requireRole('teacher'), async (req, res) => {
     try {
-        const { courseId } = req.params;
-        const [rows] = await db.query(
+        const courseId = req.params.courseId;
+        const teacherId = req.headers['x-user-id'];
+
+        const [course] = await db.query(
             'SELECT course_id FROM courses WHERE course_id = ? AND teacher_id = ?',
-            [req.params.courseId, req.body.teacher_id ?? req.headers['x-user-id']]
+            [courseId, teacherId]
         );
-        if (rows.length === 0)
-            return res.status(403).json({ message: 'ไม่มีสิทธิ์ลบรายวิชานี้' });
+
+        if (course.length === 0) {
+            return res.status(403).json({ message: 'ไม่มีสิทธิ์ลบรายวิชานี้ หรือไม่พบรายวิชา' });
+        }
+
         await db.query('DELETE FROM lesson_completions WHERE course_id = ?', [courseId]);
         await db.query('DELETE FROM enrollments WHERE course_id = ?', [courseId]);
         await db.query('DELETE FROM lessons WHERE course_id = ?', [courseId]);
         await db.query('DELETE FROM courses WHERE course_id = ?', [courseId]);
+
         res.json({ message: 'ลบรายวิชาสำเร็จ' });
     } catch (error) {
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลบรายวิชา', error: error.message });
@@ -251,15 +263,36 @@ app.post('/teacher/courses/:courseId/lessons', requireRole('teacher'), async (re
 
 app.put('/teacher/lessons/:lessonId', requireRole('teacher'), async (req, res) => {
     try {
+        const lessonId = req.params.lessonId;
+        const teacherId = req.headers['x-user-id'];
+
         const { title, description, video_url, document_url, quiz_url } = req.body;
+
         if (!title) return res.status(400).json({ message: 'กรุณากรอกชื่อบทเรียน' });
 
-        await db.query(
+        const [ownership] = await db.query(
+            `SELECT l.lesson_id 
+             FROM lessons l
+             JOIN courses c ON l.course_id = c.course_id
+             WHERE l.lesson_id = ? AND c.teacher_id = ?`,
+            [lessonId, teacherId]
+        );
+
+        if (ownership.length === 0) {
+            return res.status(403).json({ message: 'ไม่มีสิทธิ์แก้ไขบทเรียนนี้ หรือไม่พบบทเรียน' });
+        }
+
+        const [result] = await db.query(
             `UPDATE lessons
              SET title = ?, description = ?, video_url = ?, document_url = ?, quiz_url = ?
              WHERE lesson_id = ?`,
-            [title, description || '', video_url || '', document_url || '', quiz_url || '', req.params.lessonId]
+            [title, description || '', video_url || '', document_url || '', quiz_url || '', lessonId]
         );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'ไม่พบบทเรียนที่ต้องการอัปเดต' });
+        }
+
         res.json({ message: 'อัปเดตบทเรียนสำเร็จ' });
     } catch (error) {
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการอัปเดตบทเรียน', error: error.message });
@@ -268,8 +301,29 @@ app.put('/teacher/lessons/:lessonId', requireRole('teacher'), async (req, res) =
 
 app.delete('/teacher/lessons/:lessonId', requireRole('teacher'), async (req, res) => {
     try {
-        await db.query('DELETE FROM lesson_completions WHERE lesson_id = ?', [req.params.lessonId]);
-        await db.query('DELETE FROM lessons WHERE lesson_id = ?', [req.params.lessonId]);
+        const lessonId = req.params.lessonId;
+        const teacherId = req.headers['x-user-id'];
+
+        const [ownership] = await db.query(
+            `SELECT l.lesson_id 
+             FROM lessons l
+             JOIN courses c ON l.course_id = c.course_id
+             WHERE l.lesson_id = ? AND c.teacher_id = ?`,
+            [lessonId, teacherId]
+        );
+
+        if (ownership.length === 0) {
+            return res.status(403).json({ message: 'ไม่มีสิทธิ์ลบบทเรียนนี้ หรือไม่พบบทเรียน' });
+        }
+
+        await db.query('DELETE FROM lesson_completions WHERE lesson_id = ?', [lessonId]);
+
+        const [result] = await db.query('DELETE FROM lessons WHERE lesson_id = ?', [lessonId]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'ไม่พบบทเรียนที่ต้องการลบ' });
+        }
+
         res.json({ message: 'ลบบทเรียนสำเร็จ' });
     } catch (error) {
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลบบทเรียน', error: error.message });
@@ -323,14 +377,31 @@ app.get('/teacher/courses/:courseId/students', requireRole('teacher'), async (re
 app.delete('/teacher/courses/:courseId/students/:studentId', requireRole('teacher'), async (req, res) => {
     try {
         const { courseId, studentId } = req.params;
+        const teacherId = req.headers['x-user-id'];
+
+        const [course] = await db.query(
+            'SELECT course_id FROM courses WHERE course_id = ? AND teacher_id = ?',
+            [courseId, teacherId]
+        );
+
+        if (course.length === 0) {
+            return res.status(403).json({ message: 'ไม่มีสิทธิ์จัดการคอร์สนี้ หรือไม่พบคอร์ส' });
+        }
+
         await db.query(
             'DELETE FROM lesson_completions WHERE course_id = ? AND student_id = ?',
             [courseId, studentId]
         );
-        await db.query(
+
+        const [result] = await db.query(
             'DELETE FROM enrollments WHERE course_id = ? AND student_id = ?',
             [courseId, studentId]
         );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'ไม่พบนักศึกษาในรายวิชานี้' });
+        }
+
         res.json({ message: 'ลบนักศึกษาออกจากรายวิชาสำเร็จ' });
     } catch (error) {
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลบนักศึกษา', error: error.message });
@@ -402,11 +473,13 @@ app.post('/student/enroll', requireRole('student'), async (req, res) => {
 app.delete('/student/enrollments/:studentId/:courseId', requireRole('student'), async (req, res) => {
     try {
         const { studentId, courseId } = req.params;
-        const [result] = await db.query(
-            'DELETE FROM users WHERE user_id = ?', [req.params.userId]
+        const [check] = await db.query(
+            'SELECT enroll_id FROM enrollments WHERE student_id = ? AND course_id = ?',
+            [studentId, courseId]
         );
-        if (result.affectedRows === 0)
+        if (check.length === 0)
             return res.status(404).json({ message: 'ไม่พบรายวิชาที่ลงทะเบียน' });
+
         await db.query(
             'DELETE FROM lesson_completions WHERE student_id = ? AND course_id = ?',
             [studentId, courseId]
@@ -526,7 +599,6 @@ app.post('/student/courses/:courseId/lessons/:lessonId/complete', requireRole('s
 
 // ===================== START =====================
 
-app.listen(PORT, async () => {
-    await connectDB();
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+connectDB()
+    .then(() => app.listen(PORT, () => console.log(`Server running on port ${PORT}`)))
+    .catch(err => { console.error('DB connection failed:', err); process.exit(1); });

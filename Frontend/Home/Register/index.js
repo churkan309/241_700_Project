@@ -69,7 +69,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
         showPopup('กรุณาเลือกประเภทผู้ใช้ (นักเรียน / อาจารย์)', 'warning');
         return;
     }
-    const firstname = document.querySelector('input[type="firstname"]').value.trim();
+    const firstname = document.getElementById('inputFirstname').value.trim();
     const lastname = document.querySelector('input[type="lastname"]').value.trim();
     const email = document.querySelector('input[type="email"]').value.trim();
     const password = document.querySelector('input[type="password"]').value.trim();
