@@ -21,7 +21,10 @@
             margin-bottom: var(--space-6);
             transition: color var(--transition);
         }
-        .back-btn:hover { color: var(--accent); }
+
+        .back-btn:hover {
+            color: var(--accent);
+        }
 
         .course-meta {
             display: flex;
@@ -40,8 +43,14 @@
             transition: background var(--transition);
             animation: rowIn .3s ease both;
         }
-        .student-row:last-child { border-bottom: none; }
-        .student-row:hover { background: var(--bg-hover); }
+
+        .student-row:last-child {
+            border-bottom: none;
+        }
+
+        .student-row:hover {
+            background: var(--bg-hover);
+        }
 
         .student-avatar {
             width: 36px;
@@ -57,7 +66,10 @@
             flex-shrink: 0;
         }
 
-        .student-info { min-width: 0; }
+        .student-info {
+            min-width: 0;
+        }
+
         .student-name {
             font-weight: 600;
             color: var(--text-1);
@@ -66,6 +78,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         .student-email {
             font-size: var(--text-xs);
             color: var(--text-2);
@@ -74,23 +87,31 @@
             text-overflow: ellipsis;
         }
 
-        .progress-col { min-width: 0; }
+        .progress-col {
+            min-width: 0;
+        }
+
         .progress-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: var(--space-1);
         }
+
         .progress-label {
             font-size: var(--text-xs);
             color: var(--text-2);
         }
+
         .progress-pct {
             font-size: var(--text-xs);
             font-weight: 600;
             color: var(--text-1);
         }
-        .progress-pct.done { color: var(--green); }
+
+        .progress-pct.done {
+            color: var(--green);
+        }
 
         .action-col {
             display: flex;
@@ -105,6 +126,7 @@
             background: var(--bg-hover);
             border-bottom: 1px solid var(--border);
         }
+
         .table-head-row span {
             font-size: var(--text-xs);
             text-transform: uppercase;
@@ -112,6 +134,7 @@
             color: var(--text-2);
             font-weight: 600;
         }
+
         .table-head-row .th-action {
             text-align: right;
         }
@@ -129,13 +152,27 @@
             cursor: pointer;
             transition: var(--transition);
         }
-        .btn-confirm-delete:hover { filter: brightness(1.1); }
+
+        .btn-confirm-delete:hover {
+            filter: brightness(1.1);
+        }
 
         @media (max-width: 640px) {
-            .student-row       { grid-template-columns: 36px 1fr auto; }
-            .table-head-row    { grid-template-columns: 36px 1fr auto; }
-            .progress-col      { display: none; }
-            .table-head-row .th-progress { display: none; }
+            .student-row {
+                grid-template-columns: 36px 1fr auto;
+            }
+
+            .table-head-row {
+                grid-template-columns: 36px 1fr auto;
+            }
+
+            .progress-col {
+                display: none;
+            }
+
+            .table-head-row .th-progress {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -160,8 +197,8 @@
 
         <button class="back-btn" id="btnBack">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.8"
-                      stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                    stroke-linejoin="round" />
             </svg>
             กลับหน้าบทเรียน
         </button>

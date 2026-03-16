@@ -16,6 +16,17 @@ if (!user.id || user.role !== 'teacher' || !courseId) {
 
 axios.defaults.headers.common['x-user-role'] = 'teacher';
 
+axios.interceptors.response.use(
+    res => res,
+    err => {
+        if (err.response?.status === 401 || err.response?.status === 403) {
+            localStorage.clear();
+            window.location.href = '../../Home/Login/index.html';
+        }
+        return Promise.reject(err);
+    }
+);
+
 const lessonWrap = document.getElementById('lessonWrap');
 const pageTitle = document.getElementById('pageTitle');
 const pageSubtitle = document.getElementById('pageSubtitle');
@@ -176,7 +187,7 @@ function openEditLesson(lessonId) {
     editingLessonId = lessonId;
     document.getElementById('lessonModalTitle').textContent = '✏️ แก้ไขบทเรียน';
 
-    const lesson = cachedLessons.find(l => l.lesson_id === lessonId);
+    const lesson = cachedLessons.find(l => String(l.lesson_id) === String(lessonId));
     if (!lesson) {
         toast('ไม่พบข้อมูลบทเรียน กรุณาลองใหม่อีกครั้ง', 'error');
         return;

@@ -1,13 +1,13 @@
 const BASE_URL = 'http://localhost:8000';
 
 const user = {
-    id:        localStorage.getItem('user_id'),
+    id: localStorage.getItem('user_id'),
     firstname: localStorage.getItem('firstname'),
-    lastname:  localStorage.getItem('lastname'),
-    role:      localStorage.getItem('role'),
+    lastname: localStorage.getItem('lastname'),
+    role: localStorage.getItem('role'),
 };
 
-const params   = new URLSearchParams(window.location.search);
+const params = new URLSearchParams(window.location.search);
 const courseId = params.get('courseId');
 
 if (!user.id || user.role !== 'teacher' || !courseId) {
@@ -16,15 +16,26 @@ if (!user.id || user.role !== 'teacher' || !courseId) {
 
 axios.defaults.headers.common['x-user-role'] = 'teacher';
 
-const studentWrap  = document.getElementById('studentWrap');
-const pageTitle    = document.getElementById('pageTitle');
+axios.interceptors.response.use(
+    res => res,
+    err => {
+        if (err.response?.status === 401 || err.response?.status === 403) {
+            localStorage.clear();
+            window.location.href = '../../Home/Login/index.html';
+        }
+        return Promise.reject(err);
+    }
+);
+
+const studentWrap = document.getElementById('studentWrap');
+const pageTitle = document.getElementById('pageTitle');
 const pageSubtitle = document.getElementById('pageSubtitle');
-const statTotal    = document.getElementById('statTotal');
-const statDone     = document.getElementById('statDone');
-const statAvg      = document.getElementById('statAvg');
+const statTotal = document.getElementById('statTotal');
+const statDone = document.getElementById('statDone');
+const statAvg = document.getElementById('statAvg');
 
 function initUI() {
-    document.getElementById('topbarName').textContent    = `${user.firstname} ${user.lastname}`;
+    document.getElementById('topbarName').textContent = `${user.firstname} ${user.lastname}`;
     document.getElementById('avatarInitial').textContent =
         (user.firstname?.[0] || '') + (user.lastname?.[0] || '');
     document.getElementById('courseIdBadge').textContent = `Course ID: ${courseId}`;
@@ -46,18 +57,18 @@ async function loadStudents() {
         const { data } = await axios.get(`${BASE_URL}/teacher/courses/${courseId}/students`);
         const { course, students } = data;
 
-        pageTitle.textContent    = course.title;
+        pageTitle.textContent = course.title;
         pageSubtitle.textContent = course.description || 'ไม่มีคำอธิบายรายวิชา';
         document.getElementById('enrollBadge').textContent = `${students.length} คน`;
 
         const doneCount = students.filter(s => s.progress_percent >= 100).length;
-        const avgPct    = students.length
+        const avgPct = students.length
             ? Math.round(students.reduce((sum, s) => sum + s.progress_percent, 0) / students.length)
             : 0;
 
         statTotal.textContent = students.length;
-        statDone.textContent  = doneCount;
-        statAvg.textContent   = `${avgPct}%`;
+        statDone.textContent = doneCount;
+        statAvg.textContent = `${avgPct}%`;
 
         if (students.length === 0) {
             studentWrap.innerHTML = `
@@ -93,8 +104,8 @@ async function loadStudents() {
 
 function renderStudentRow(s, idx) {
     const initials = (s.firstname?.[0] || '') + (s.lastname?.[0] || '');
-    const pct      = s.progress_percent ?? 0;
-    const isDone   = pct >= 100;
+    const pct = s.progress_percent ?? 0;
+    const isDone = pct >= 100;
     const barColor = isDone ? 'green' : pct >= 50 ? '' : 'orange';
 
     return `
@@ -139,7 +150,7 @@ document.getElementById('btnConfirmRemove').addEventListener('click', async () =
     if (!pendingStudentId) return;
 
     const btn = document.getElementById('btnConfirmRemove');
-    btn.disabled    = true;
+    btn.disabled = true;
     btn.textContent = 'กำลังลบ...';
 
     try {
@@ -150,7 +161,7 @@ document.getElementById('btnConfirmRemove').addEventListener('click', async () =
     } catch (err) {
         toast(err.response?.data?.message || 'ลบไม่สำเร็จ', 'error');
     } finally {
-        btn.disabled    = false;
+        btn.disabled = false;
         btn.textContent = 'ลบออกจากรายวิชา';
         pendingStudentId = null;
     }
@@ -175,7 +186,7 @@ document.getElementById('btnProfile').addEventListener('click', () => {
 // ─────────────────────────────────────────
 //  HELPERS
 // ─────────────────────────────────────────
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
@@ -186,7 +197,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 
 function toast(msg, type = 'success') {
     const t = document.createElement('div');
-    t.className   = `toast${type === 'error' ? ' error' : ''}`;
+    t.className = `toast${type === 'error' ? ' error' : ''}`;
     t.textContent = msg;
     document.getElementById('toastContainer').appendChild(t);
     setTimeout(() => t.remove(), 3500);
@@ -195,10 +206,10 @@ function toast(msg, type = 'success') {
 function escHtml(str) {
     return String(str)
         .replace(/&/g, '&amp;')
-        .replace(/</g,  '&lt;')
-        .replace(/>/g,  '&gt;')
-        .replace(/"/g,  '&quot;')
-        .replace(/'/g,  '&#39;');
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 initUI();

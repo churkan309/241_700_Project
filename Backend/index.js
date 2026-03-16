@@ -8,6 +8,11 @@ const mysql = require('mysql2/promise');
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+app.param(['userId', 'courseId', 'lessonId', 'studentId'], (req, res, next, val) => {
+    if (isNaN(Number(val)))
+        return res.status(400).json({ message: `${val} ต้องเป็นตัวเลข` });
+    next();
+});
 
 const PORT = process.env.PORT || 8000;
 let db = null;
@@ -79,7 +84,14 @@ app.post('/auth/login', async (req, res) => {
 
 // ===================== USERS =====================
 
-app.get('/users/:userId', async (req, res) => {
+const requireSelf = (req, res, next) => {
+    const requesterId = req.headers['x-user-id'];
+    if (!requesterId || requesterId !== req.params.userId)
+        return res.status(403).json({ message: 'ไม่มีสิทธิ์' });
+    next();
+};
+
+app.get('/users/:userId', requireSelf, async (req, res) => {
     try {
         const [rows] = await db.query(
             'SELECT user_id, firstname, lastname, email, role FROM users WHERE user_id = ?',
@@ -92,7 +104,7 @@ app.get('/users/:userId', async (req, res) => {
     }
 });
 
-app.put('/users/:userId', async (req, res) => {
+app.put('/users/:userId', requireSelf, async (req, res) => {
     try {
         const { firstname, lastname, password } = req.body;
         if (!firstname || !lastname || !password) {
@@ -108,8 +120,14 @@ app.put('/users/:userId', async (req, res) => {
     }
 });
 
-app.delete('/users/:userId', async (req, res) => {
+app.delete('/users/:userId', requireSelf, async (req, res) => {
     try {
+        const [result] = await db.query(
+            'DELETE FROM users WHERE user_id = ?', [req.params.userId]
+        );
+        if (result.affectedRows === 0)
+            return res.status(404).json({ message: 'ไม่พบผู้ใช้งาน' });
+
         await db.query('DELETE FROM lesson_completions WHERE student_id = ?', [req.params.userId]);
         await db.query('DELETE FROM enrollments WHERE student_id = ?', [req.params.userId]);
         await db.query('DELETE FROM users WHERE user_id = ?', [req.params.userId]);
@@ -164,6 +182,12 @@ app.put('/teacher/courses/:courseId', requireRole('teacher'), async (req, res) =
     try {
         const { title, description } = req.body;
         if (!title) return res.status(400).json({ message: 'กรุณากรอกชื่อคอร์ส' });
+        const [rows] = await db.query(
+            'SELECT course_id FROM courses WHERE course_id = ? AND teacher_id = ?',
+            [req.params.courseId, req.body.teacher_id ?? req.headers['x-user-id']]
+        );
+        if (rows.length === 0)
+            return res.status(403).json({ message: 'ไม่มีสิทธิ์แก้ไขรายวิชานี้' });
         await db.query(
             'UPDATE courses SET title = ?, description = ? WHERE course_id = ?',
             [title, description || '', req.params.courseId]
@@ -177,6 +201,12 @@ app.put('/teacher/courses/:courseId', requireRole('teacher'), async (req, res) =
 app.delete('/teacher/courses/:courseId', requireRole('teacher'), async (req, res) => {
     try {
         const { courseId } = req.params;
+        const [rows] = await db.query(
+            'SELECT course_id FROM courses WHERE course_id = ? AND teacher_id = ?',
+            [req.params.courseId, req.body.teacher_id ?? req.headers['x-user-id']]
+        );
+        if (rows.length === 0)
+            return res.status(403).json({ message: 'ไม่มีสิทธิ์ลบรายวิชานี้' });
         await db.query('DELETE FROM lesson_completions WHERE course_id = ?', [courseId]);
         await db.query('DELETE FROM enrollments WHERE course_id = ?', [courseId]);
         await db.query('DELETE FROM lessons WHERE course_id = ?', [courseId]);
@@ -349,6 +379,13 @@ app.post('/student/enroll', requireRole('student'), async (req, res) => {
             return res.status(400).json({ message: 'ข้อมูลไม่ครบถ้วน' });
         }
 
+        const [course] = await db.query(
+            'SELECT course_id FROM courses WHERE course_id = ?',
+            [course_id]
+        );
+        if (course.length === 0)
+            return res.status(404).json({ message: 'ไม่พบรายวิชา' });
+
         const [existing] = await db.query(
             'SELECT enroll_id FROM enrollments WHERE student_id = ? AND course_id = ?',
             [student_id, course_id]
@@ -365,6 +402,11 @@ app.post('/student/enroll', requireRole('student'), async (req, res) => {
 app.delete('/student/enrollments/:studentId/:courseId', requireRole('student'), async (req, res) => {
     try {
         const { studentId, courseId } = req.params;
+        const [result] = await db.query(
+            'DELETE FROM users WHERE user_id = ?', [req.params.userId]
+        );
+        if (result.affectedRows === 0)
+            return res.status(404).json({ message: 'ไม่พบรายวิชาที่ลงทะเบียน' });
         await db.query(
             'DELETE FROM lesson_completions WHERE student_id = ? AND course_id = ?',
             [studentId, courseId]
@@ -438,6 +480,13 @@ app.post('/student/courses/:courseId/lessons/:lessonId/complete', requireRole('s
         const { student_id } = req.body;
 
         if (!student_id) return res.status(400).json({ message: 'กรุณาระบุ student_id' });
+
+        const [enrolled] = await db.query(
+            'SELECT enroll_id FROM enrollments WHERE student_id = ? AND course_id = ?',
+            [student_id, courseId]
+        );
+        if (enrolled.length === 0)
+            return res.status(403).json({ message: 'คุณยังไม่ได้ลงทะเบียนรายวิชานี้' });
 
         const [alreadyDone] = await db.query(
             'SELECT id FROM lesson_completions WHERE student_id = ? AND lesson_id = ? AND course_id = ?',

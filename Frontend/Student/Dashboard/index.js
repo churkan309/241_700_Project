@@ -16,6 +16,17 @@ if (!user.id || user.role !== 'student') {
 // ── Axios default header ──
 axios.defaults.headers.common['x-user-role'] = 'student';
 
+axios.interceptors.response.use(
+    res => res,
+    err => {
+        if (err.response?.status === 401 || err.response?.status === 403) {
+            localStorage.clear();
+            window.location.href = '../../Home/Login/index.html';
+        }
+        return Promise.reject(err);
+    }
+);
+
 // ── DOM refs ──
 const heroName = document.getElementById('heroName');
 const topbarName = document.getElementById('topbarName');
@@ -302,8 +313,11 @@ document.getElementById('btnDeleteAccount').addEventListener('click', async () =
     try {
         await axios.delete(`${BASE_URL}/users/${user.id}`);
         localStorage.clear();
-        alert('ลบบัญชีสำเร็จ');
-        window.location.href = '../../Home/Login/index.html';
+        toast('ลบบัญชีสำเร็จ');
+        setTimeout(() => {
+            localStorage.clear();
+            window.location.href = '../../Home/Login/index.html';
+        }, 1000);
     } catch (err) {
         toast(err.response?.data?.message || 'ลบบัญชีไม่สำเร็จ', 'error');
         btn.disabled = false;

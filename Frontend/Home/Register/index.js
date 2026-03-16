@@ -7,7 +7,7 @@ function showPopup(message, type = 'error') {
     if (existing) existing.remove();
 
     const colors = {
-        error:   { bg: '#fee2e2', border: '#f87171', icon: '❌', title: 'เกิดข้อผิดพลาด' },
+        error: { bg: '#fee2e2', border: '#f87171', icon: '❌', title: 'เกิดข้อผิดพลาด' },
         success: { bg: '#dcfce7', border: '#4ade80', icon: '✅', title: 'สำเร็จ' },
         warning: { bg: '#fef9c3', border: '#facc15', icon: '⚠️', title: 'คำเตือน' },
     };
@@ -64,11 +64,15 @@ function showPopup(message, type = 'error') {
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const role      = document.querySelector('input[name="role"]:checked')?.value;
+    const role = document.querySelector('input[name="role"]:checked')?.value;
+    if (!role) {
+        showPopup('กรุณาเลือกประเภทผู้ใช้ (นักเรียน / อาจารย์)', 'warning');
+        return;
+    }
     const firstname = document.querySelector('input[type="firstname"]').value.trim();
-    const lastname  = document.querySelector('input[type="lastname"]').value.trim();
-    const email     = document.querySelector('input[type="email"]').value.trim();
-    const password  = document.querySelector('input[type="password"]').value.trim();
+    const lastname = document.querySelector('input[type="lastname"]').value.trim();
+    const email = document.querySelector('input[type="email"]').value.trim();
+    const password = document.querySelector('input[type="password"]').value.trim();
 
     if (!firstname || !lastname || !email || !password) {
         showPopup('กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');

@@ -14,21 +14,32 @@ if (!user.id || user.role !== 'teacher') {
 
 axios.defaults.headers.common['x-user-role'] = 'teacher';
 
-const heroName    = document.getElementById('heroName');
-const topbarName  = document.getElementById('topbarName');
-const avatarInit  = document.getElementById('avatarInitial');
+axios.interceptors.response.use(
+    res => res,
+    err => {
+        if (err.response?.status === 401 || err.response?.status === 403) {
+            localStorage.clear();
+            window.location.href = '../../Home/Login/index.html';
+        }
+        return Promise.reject(err);
+    }
+);
+
+const heroName = document.getElementById('heroName');
+const topbarName = document.getElementById('topbarName');
+const avatarInit = document.getElementById('avatarInitial');
 const statCourses = document.getElementById('statCourses');
-const statId      = document.getElementById('statId');
-const statEmail   = document.getElementById('statEmail');
+const statId = document.getElementById('statId');
+const statEmail = document.getElementById('statEmail');
 const sectionCount = document.getElementById('sectionCount');
-const courseGrid  = document.getElementById('courseGrid');
+const courseGrid = document.getElementById('courseGrid');
 
 function initUI() {
-    heroName.textContent    = `${user.firstname} ${user.lastname}`;
-    topbarName.textContent  = `${user.firstname} ${user.lastname}`;
-    avatarInit.textContent  = (user.firstname?.[0] || '') + (user.lastname?.[0] || '');
-    statId.textContent      = `#${user.id}`;
-    statEmail.textContent   = user.email || '–';
+    heroName.textContent = `${user.firstname} ${user.lastname}`;
+    topbarName.textContent = `${user.firstname} ${user.lastname}`;
+    avatarInit.textContent = (user.firstname?.[0] || '') + (user.lastname?.[0] || '');
+    statId.textContent = `#${user.id}`;
+    statEmail.textContent = user.email || '–';
     loadCourses();
 }
 
@@ -41,7 +52,7 @@ async function loadCourses() {
     try {
         const { data: courses } = await axios.get(`${BASE_URL}/teacher/courses/${user.id}`);
 
-        statCourses.textContent  = courses.length;
+        statCourses.textContent = courses.length;
         sectionCount.textContent = `${courses.length} วิชา`;
 
         if (courses.length === 0) {
@@ -127,13 +138,13 @@ document.getElementById('btnCreate').addEventListener('click', () => {
 document.getElementById('btnCancelCourse').addEventListener('click', () => closeModal('courseModal'));
 
 document.getElementById('btnSaveCourse').addEventListener('click', async () => {
-    const title       = document.getElementById('inputCourseTitle').value.trim();
+    const title = document.getElementById('inputCourseTitle').value.trim();
     const description = document.getElementById('inputCourseDesc').value.trim();
 
     if (!title) { toast('กรุณากรอกชื่อรายวิชา', 'error'); return; }
 
     const btn = document.getElementById('btnSaveCourse');
-    btn.disabled    = true;
+    btn.disabled = true;
     btn.textContent = 'กำลังบันทึก...';
 
     try {
@@ -149,7 +160,7 @@ document.getElementById('btnSaveCourse').addEventListener('click', async () => {
     } catch (err) {
         toast(err.response?.data?.message || 'บันทึกไม่สำเร็จ', 'error');
     } finally {
-        btn.disabled    = false;
+        btn.disabled = false;
         btn.textContent = 'บันทึก';
         editingCourseId = null;
     }
@@ -159,7 +170,7 @@ function openEditCourse(courseId, title, description) {
     editingCourseId = courseId;
     document.getElementById('courseModalTitle').textContent = '✏️ แก้ไขรายวิชา';
     document.getElementById('inputCourseTitle').value = title;
-    document.getElementById('inputCourseDesc').value  = description;
+    document.getElementById('inputCourseDesc').value = description;
     openModal('courseModal');
 }
 
@@ -176,7 +187,7 @@ document.getElementById('btnCancelDelete').addEventListener('click', () => close
 document.getElementById('btnConfirmDelete').addEventListener('click', async () => {
     if (!pendingDeleteCourseId) return;
     const btn = document.getElementById('btnConfirmDelete');
-    btn.disabled    = true;
+    btn.disabled = true;
     btn.textContent = 'กำลังลบ...';
     try {
         await axios.delete(`${BASE_URL}/teacher/courses/${pendingDeleteCourseId}`);
@@ -186,7 +197,7 @@ document.getElementById('btnConfirmDelete').addEventListener('click', async () =
     } catch (err) {
         toast(err.response?.data?.message || 'ลบรายวิชาไม่สำเร็จ', 'error');
     } finally {
-        btn.disabled    = false;
+        btn.disabled = false;
         btn.textContent = 'ลบรายวิชา';
         pendingDeleteCourseId = null;
     }
@@ -201,16 +212,16 @@ document.getElementById('btnCancelProfile').addEventListener('click', () => clos
 
 function openProfileModal() {
     document.getElementById('inputFirstname').value = user.firstname || '';
-    document.getElementById('inputLastname').value  = user.lastname  || '';
-    document.getElementById('inputPassword').value  = '';
-    document.getElementById('inputEmail').value     = user.email     || '';
+    document.getElementById('inputLastname').value = user.lastname || '';
+    document.getElementById('inputPassword').value = '';
+    document.getElementById('inputEmail').value = user.email || '';
     openModal('profileModal');
 }
 
 document.getElementById('btnSaveProfile').addEventListener('click', async () => {
     const firstname = document.getElementById('inputFirstname').value.trim();
-    const lastname  = document.getElementById('inputLastname').value.trim();
-    const password  = document.getElementById('inputPassword').value.trim();
+    const lastname = document.getElementById('inputLastname').value.trim();
+    const password = document.getElementById('inputPassword').value.trim();
 
     if (!firstname || !lastname || !password) {
         toast('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
@@ -218,27 +229,27 @@ document.getElementById('btnSaveProfile').addEventListener('click', async () => 
     }
 
     const btn = document.getElementById('btnSaveProfile');
-    btn.disabled    = true;
+    btn.disabled = true;
     btn.textContent = 'กำลังบันทึก...';
 
     try {
         await axios.put(`${BASE_URL}/users/${user.id}`, { firstname, lastname, password });
         user.firstname = firstname;
-        user.lastname  = lastname;
+        user.lastname = lastname;
         localStorage.setItem('firstname', firstname);
-        localStorage.setItem('lastname',  lastname);
+        localStorage.setItem('lastname', lastname);
 
-        heroName.textContent   = `${firstname} ${lastname}`;
+        heroName.textContent = `${firstname} ${lastname}`;
         topbarName.textContent = `${firstname} ${lastname}`;
         avatarInit.textContent = (firstname?.[0] || '') + (lastname?.[0] || '');
-        statEmail.textContent  = user.email;
+        statEmail.textContent = user.email;
 
         closeModal('profileModal');
         toast('อัปเดตโปรไฟล์สำเร็จ');
     } catch (err) {
         toast(err.response?.data?.message || 'อัปเดตไม่สำเร็จ', 'error');
     } finally {
-        btn.disabled    = false;
+        btn.disabled = false;
         btn.textContent = 'บันทึก';
     }
 });
@@ -248,17 +259,20 @@ document.getElementById('btnDeleteAccount').addEventListener('click', async () =
     if (!confirmed) return;
 
     const btn = document.getElementById('btnDeleteAccount');
-    btn.disabled    = true;
+    btn.disabled = true;
     btn.textContent = 'กำลังลบ...';
 
     try {
         await axios.delete(`${BASE_URL}/users/${user.id}`);
         localStorage.clear();
-        alert('ลบบัญชีสำเร็จ');
-        window.location.href = '../../Home/Login/index.html';
+        toast('ลบบัญชีสำเร็จ');
+        setTimeout(() => {
+            localStorage.clear();
+            window.location.href = '../../Home/Login/index.html';
+        }, 1000);
     } catch (err) {
         toast(err.response?.data?.message || 'ลบบัญชีไม่สำเร็จ', 'error');
-        btn.disabled    = false;
+        btn.disabled = false;
         btn.textContent = 'ลบบัญชี';
     }
 });
@@ -268,7 +282,7 @@ document.getElementById('btnLogout').addEventListener('click', () => {
     window.location.href = '../../Home/Login/index.html';
 });
 
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
@@ -279,7 +293,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 
 function toast(msg, type = 'success') {
     const t = document.createElement('div');
-    t.className   = `toast${type === 'error' ? ' error' : ''}`;
+    t.className = `toast${type === 'error' ? ' error' : ''}`;
     t.textContent = msg;
     document.getElementById('toastContainer').appendChild(t);
     setTimeout(() => t.remove(), 3500);
@@ -288,10 +302,10 @@ function toast(msg, type = 'success') {
 function escHtml(str) {
     return String(str)
         .replace(/&/g, '&amp;')
-        .replace(/</g,  '&lt;')
-        .replace(/>/g,  '&gt;')
-        .replace(/"/g,  '&quot;')
-        .replace(/'/g,  '&#39;');
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 initUI();

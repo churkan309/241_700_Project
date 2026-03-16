@@ -1,13 +1,13 @@
 const BASE_URL = 'http://localhost:8000';
 
 const user = {
-    id:        localStorage.getItem('user_id'),
+    id: localStorage.getItem('user_id'),
     firstname: localStorage.getItem('firstname'),
-    lastname:  localStorage.getItem('lastname'),
-    role:      localStorage.getItem('role'),
+    lastname: localStorage.getItem('lastname'),
+    role: localStorage.getItem('role'),
 };
 
-const params   = new URLSearchParams(window.location.search);
+const params = new URLSearchParams(window.location.search);
 const courseId = params.get('courseId');
 
 if (!user.id || user.role !== 'student' || !courseId) {
@@ -16,15 +16,26 @@ if (!user.id || user.role !== 'student' || !courseId) {
 
 axios.defaults.headers.common['x-user-role'] = 'student';
 
-let lessons       = [];
+axios.interceptors.response.use(
+    res => res,
+    err => {
+        if (err.response?.status === 401 || err.response?.status === 403) {
+            localStorage.clear();
+            window.location.href = '../../Home/Login/index.html';
+        }
+        return Promise.reject(err);
+    }
+);
+
+let lessons = [];
 let activeLessonIdx = 0;
-let progress      = { completed_lessons: 0, total_lessons: 0, progress_percent: 0 };
+let progress = { completed_lessons: 0, total_lessons: 0, progress_percent: 0 };
 
 // ─────────────────────────────────────────
 //  INIT
 // ─────────────────────────────────────────
 function initUI() {
-    document.getElementById('topbarName').textContent    = `${user.firstname} ${user.lastname}`;
+    document.getElementById('topbarName').textContent = `${user.firstname} ${user.lastname}`;
     document.getElementById('avatarInitial').textContent =
         (user.firstname?.[0] || '') + (user.lastname?.[0] || '');
     loadCourse();
@@ -36,7 +47,7 @@ function initUI() {
 async function loadCourse() {
     try {
         const { data } = await axios.get(`${BASE_URL}/student/courses/${courseId}/${user.id}`);
-        lessons  = data.lessons  || [];
+        lessons = data.lessons || [];
         progress = data.progress || { completed_lessons: 0, total_lessons: 0, progress_percent: 0 };
 
         renderCourseHero(data.course);
@@ -53,6 +64,10 @@ async function loadCourse() {
                 </div>`;
         }
     } catch (err) {
+        if (err.response?.status === 403) {
+            window.location.href = '../Dashboard/index.html';
+            return;
+        }
         document.getElementById('courseHero').innerHTML =
             `<div style="color:var(--red);padding:var(--space-6);">
                 เกิดข้อผิดพลาด: ${err.response?.data?.message || err.message}
@@ -65,7 +80,7 @@ async function loadCourse() {
 //  RENDER COURSE HERO
 // ─────────────────────────────────────────
 function renderCourseHero(course) {
-    const pct     = progress.progress_percent;
+    const pct = progress.progress_percent;
     const pctClass = pct >= 100 ? 'done' : pct >= 50 ? 'half' : 'low';
     const barColor = pct >= 100 ? 'green' : pct >= 50 ? '' : 'orange';
 
@@ -114,15 +129,15 @@ function renderSidebar() {
 //  RENDER LESSON CONTENT
 // ─────────────────────────────────────────
 function renderContent(idx) {
-    const l    = lessons[idx];
+    const l = lessons[idx];
     const prev = idx > 0;
     const next = idx < lessons.length - 1;
     const isDone = !!l.is_completed;
 
     const resources = [
-        l.video_url    ? { type: 'video', icon: '🎬', label: 'วิดีโอบทเรียน',  url: l.video_url }    : null,
-        l.document_url ? { type: 'doc',   icon: '📄', label: 'เอกสารประกอบ',   url: l.document_url } : null,
-        l.quiz_url     ? { type: 'quiz',  icon: '📝', label: 'แบบทดสอบ',       url: l.quiz_url }     : null,
+        l.video_url ? { type: 'video', icon: '🎬', label: 'วิดีโอบทเรียน', url: l.video_url } : null,
+        l.document_url ? { type: 'doc', icon: '📄', label: 'เอกสารประกอบ', url: l.document_url } : null,
+        l.quiz_url ? { type: 'quiz', icon: '📝', label: 'แบบทดสอบ', url: l.quiz_url } : null,
     ].filter(Boolean);
 
     document.getElementById('lessonContent').innerHTML = `
@@ -133,8 +148,8 @@ function renderContent(idx) {
 
         <div class="content-body">
             ${l.description
-                ? `<p class="content-desc">${escHtml(l.description)}</p>`
-                : ''}
+            ? `<p class="content-desc">${escHtml(l.description)}</p>`
+            : ''}
 
             ${resources.length > 0 ? `
                 <div class="resources-title">สื่อการเรียน</div>
@@ -185,15 +200,15 @@ function renderContent(idx) {
                     id="btnComplete" onclick="completeLesson(${l.lesson_id}, ${idx})"
                     ${isDone ? 'disabled' : ''}>
                 ${isDone
-                    ? `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            ? `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                             <path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="2"
                                   stroke-linecap="round" stroke-linejoin="round"/>
                        </svg> เรียนแล้ว`
-                    : `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            : `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                             <path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="2"
                                   stroke-linecap="round" stroke-linejoin="round"/>
                        </svg> เสร็จสิ้น`
-                }
+        }
             </button>
         </div>`;
 }
@@ -220,7 +235,7 @@ function selectLesson(idx) {
 // ─────────────────────────────────────────
 async function completeLesson(lessonId, idx) {
     const btn = document.getElementById('btnComplete');
-    btn.disabled    = true;
+    btn.disabled = true;
     btn.textContent = 'กำลังบันทึก...';
 
     try {
@@ -248,7 +263,7 @@ async function completeLesson(lessonId, idx) {
             renderContent(idx);
         } else {
             toast(err.response?.data?.message || 'บันทึกไม่สำเร็จ', 'error');
-            btn.disabled    = false;
+            btn.disabled = false;
             btn.textContent = 'เสร็จสิ้น';
         }
     }
@@ -258,24 +273,24 @@ async function completeLesson(lessonId, idx) {
 //  UPDATE PROGRESS UI (ไม่ reload ทั้งหน้า)
 // ─────────────────────────────────────────
 function updateProgressUI() {
-    const pct      = progress.progress_percent;
+    const pct = progress.progress_percent;
     const pctClass = pct >= 100 ? 'done' : pct >= 50 ? 'half' : 'low';
     const barColor = pct >= 100 ? 'green' : pct >= 50 ? '' : 'orange';
 
     const bigPct = document.getElementById('bigPct');
-    const sub    = document.getElementById('progressSub');
-    const bar    = document.getElementById('heroBar');
+    const sub = document.getElementById('progressSub');
+    const bar = document.getElementById('heroBar');
 
     if (bigPct) {
         bigPct.textContent = `${pct}%`;
-        bigPct.className   = `progress-big-pct ${pctClass}`;
+        bigPct.className = `progress-big-pct ${pctClass}`;
     }
     if (sub) {
         sub.textContent = `${progress.completed_lessons} / ${progress.total_lessons} บทเรียน`;
     }
     if (bar) {
         bar.style.width = `${pct}%`;
-        bar.className   = `progress-bar-lg progress-bar ${barColor}`;
+        bar.className = `progress-bar-lg progress-bar ${barColor}`;
     }
 }
 
@@ -300,7 +315,7 @@ document.getElementById('btnProfile').addEventListener('click', () => {
 // ─────────────────────────────────────────
 function toast(msg, type = 'success') {
     const t = document.createElement('div');
-    t.className   = `toast${type === 'error' ? ' error' : ''}`;
+    t.className = `toast${type === 'error' ? ' error' : ''}`;
     t.textContent = msg;
     document.getElementById('toastContainer').appendChild(t);
     setTimeout(() => t.remove(), 3800);
@@ -309,10 +324,10 @@ function toast(msg, type = 'success') {
 function escHtml(str) {
     return String(str)
         .replace(/&/g, '&amp;')
-        .replace(/</g,  '&lt;')
-        .replace(/>/g,  '&gt;')
-        .replace(/"/g,  '&quot;')
-        .replace(/'/g,  '&#39;');
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 initUI();
