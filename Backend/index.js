@@ -194,10 +194,13 @@ app.put('/teacher/courses/:courseId', requireRole('teacher'), async (req, res) =
         );
         if (rows.length === 0)
             return res.status(403).json({ message: 'ไม่มีสิทธิ์แก้ไขรายวิชานี้' });
-        await db.query(
+
+        const [result] = await db.query(
             'UPDATE courses SET title = ?, description = ? WHERE course_id = ?',
             [title, description || '', req.params.courseId]
         );
+        if (result.affectedRows === 0)
+            return res.status(404).json({ message: 'ไม่พบรายวิชา' });
         res.json({ message: 'อัปเดตรายวิชาสำเร็จ' });
     } catch (error) {
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการอัปเดตรายวิชา', error: error.message });

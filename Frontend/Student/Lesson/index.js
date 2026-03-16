@@ -15,6 +15,7 @@ if (!user.id || user.role !== 'student' || !courseId) {
 }
 
 axios.defaults.headers.common['x-user-role'] = 'student';
+axios.defaults.headers.common['x-user-id'] = user.id;
 
 axios.interceptors.response.use(
     res => res,
