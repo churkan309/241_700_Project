@@ -24,6 +24,9 @@ const statLessons = document.getElementById('statLessons');
 const statVideos = document.getElementById('statVideos');
 const statQuizzes = document.getElementById('statQuizzes');
 
+// เก็บ lessons ที่โหลดมาแล้วไว้ใช้ใน openEditLesson
+let cachedLessons = [];
+
 function initUI() {
     document.getElementById('topbarName').textContent = `${user.firstname} ${user.lastname}`;
     document.getElementById('avatarInitial').textContent =
@@ -43,16 +46,15 @@ async function loadLessons() {
         </div>`;
 
     try {
-        const [{ data: lessons }, { data: course }] = await Promise.all([
+        const [{ data: lessons }, { data: courses }] = await Promise.all([
             axios.get(`${BASE_URL}/teacher/courses/${courseId}/lessons`),
-            axios.get(`${BASE_URL}/users/${user.id}`).then(() =>
-                axios.get(`${BASE_URL}/teacher/courses/${user.id}`)
-            ).catch(() => ({ data: [] })),
+            axios.get(`${BASE_URL}/teacher/courses/${user.id}`),
         ]);
 
-        const courseRes = await axios.get(`${BASE_URL}/teacher/courses/${user.id}`).catch(() => ({ data: [] }));
-        const courseInfo = courseRes.data.find(c => String(c.course_id) === String(courseId));
+        // แคช lessons ไว้ใช้ใน openEditLesson โดยไม่ต้องเรียก API ซ้ำ
+        cachedLessons = lessons;
 
+        const courseInfo = courses.find(c => String(c.course_id) === String(courseId));
         if (courseInfo) {
             pageTitle.textContent = courseInfo.title;
             pageSubtitle.textContent = courseInfo.description || 'ไม่มีคำอธิบายรายวิชา';
@@ -168,36 +170,24 @@ document.getElementById('btnSaveLesson').addEventListener('click', async () => {
 
 // ─────────────────────────────────────────
 //  EDIT LESSON
+//  แก้ไข: ดึงข้อมูลจาก cachedLessons แทนการเรียก Student endpoint
 // ─────────────────────────────────────────
-async function openEditLesson(lessonId) {
+function openEditLesson(lessonId) {
     editingLessonId = lessonId;
     document.getElementById('lessonModalTitle').textContent = '✏️ แก้ไขบทเรียน';
 
-    try {
-        const { data: lesson } = await axios.get(
-            `${BASE_URL}/student/courses/${courseId}/lessons/${lessonId}`,
-            { headers: { 'x-user-role': 'student' } }
-        ).catch(() =>
-            axios.get(`${BASE_URL}/teacher/courses/${courseId}/lessons`)
-                .then(r => ({ data: r.data.find(l => l.lesson_id === lessonId) || {} }))
-        );
-
-        document.getElementById('inputTitle').value = lesson.title || '';
-        document.getElementById('inputDesc').value = lesson.description || '';
-        document.getElementById('inputVideo').value = lesson.video_url || '';
-        document.getElementById('inputDoc').value = lesson.document_url || '';
-        document.getElementById('inputQuiz').value = lesson.quiz_url || '';
-        openModal('lessonModal');
-    } catch {
-        const { data: lessons } = await axios.get(`${BASE_URL}/teacher/courses/${courseId}/lessons`);
-        const lesson = lessons.find(l => l.lesson_id === lessonId) || {};
-        document.getElementById('inputTitle').value = lesson.title || '';
-        document.getElementById('inputDesc').value = lesson.description || '';
-        document.getElementById('inputVideo').value = lesson.video_url || '';
-        document.getElementById('inputDoc').value = lesson.document_url || '';
-        document.getElementById('inputQuiz').value = lesson.quiz_url || '';
-        openModal('lessonModal');
+    const lesson = cachedLessons.find(l => l.lesson_id === lessonId);
+    if (!lesson) {
+        toast('ไม่พบข้อมูลบทเรียน กรุณาลองใหม่อีกครั้ง', 'error');
+        return;
     }
+
+    document.getElementById('inputTitle').value = lesson.title || '';
+    document.getElementById('inputDesc').value = lesson.description || '';
+    document.getElementById('inputVideo').value = lesson.video_url || '';
+    document.getElementById('inputDoc').value = lesson.document_url || '';
+    document.getElementById('inputQuiz').value = lesson.quiz_url || '';
+    openModal('lessonModal');
 }
 
 // ─────────────────────────────────────────
