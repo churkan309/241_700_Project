@@ -70,7 +70,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
         return;
     }
     const firstname = document.getElementById('inputFirstname').value.trim();
-    const lastname = document.querySelector('input[type="lastname"]').value.trim();
+    const lastname = document.getElementById('inputLastname').value.trim();
     const email = document.querySelector('input[type="email"]').value.trim();
     const password = document.querySelector('input[type="password"]').value.trim();
 

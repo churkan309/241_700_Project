@@ -599,6 +599,14 @@ app.post('/student/courses/:courseId/lessons/:lessonId/complete', requireRole('s
 
 // ===================== START =====================
 
+app.use((req, res) => {
+    res.status(404).json({ message: `ไม่พบ endpoint: ${req.method} ${req.path}` });
+});
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ message: 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์', error: err.message });
+});
+
 connectDB()
     .then(() => app.listen(PORT, () => console.log(`Server running on port ${PORT}`)))
     .catch(err => { console.error('DB connection failed:', err); process.exit(1); });
