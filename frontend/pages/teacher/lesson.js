@@ -196,6 +196,3 @@ function clearForm() {
     ['inputTitle', 'inputDesc', 'inputVideo', 'inputDoc', 'inputQuiz']
         .forEach(id => { document.getElementById(id).value = ''; });
 }
-
-// ── Start ─────────────────────────────────────────────────────────────────────
-initUI();

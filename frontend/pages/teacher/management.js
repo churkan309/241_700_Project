@@ -148,6 +148,3 @@ document.getElementById('btnBack').addEventListener('click', () => {
 });
 document.getElementById('btnLogout').addEventListener('click', () => logout('../auth/login.html'));
 document.getElementById('btnProfile').addEventListener('click', () => window.location.href = 'dashboard.html');
-
-// ── Start ─────────────────────────────────────────────────────────────────────
-initUI();

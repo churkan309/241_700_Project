@@ -207,6 +207,3 @@ function updateProgressUI() {
 document.getElementById('btnBack').addEventListener('click', () => window.location.href = 'dashboard.html');
 document.getElementById('btnLogout').addEventListener('click', () => logout('../auth/login.html'));
 document.getElementById('btnProfile').addEventListener('click', () => window.location.href = 'dashboard.html');
-
-// ── Start ─────────────────────────────────────────────────────────────────────
-initUI();

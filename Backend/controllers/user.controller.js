@@ -42,7 +42,9 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
     try {
         const db = getDB();
-        const [users] = await db.query('SELECT user_id, role FROM users WHERE user_id = ?', [req.params.userId]);
+        const { userId } = req.params;
+        const [users] = await db.query('SELECT user_id, role FROM users WHERE user_id = ?', [userId]);
+        
         if (users.length === 0)
             return res.status(404).json({ message: 'ไม่พบผู้ใช้งาน' });
 
