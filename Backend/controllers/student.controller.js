@@ -76,15 +76,26 @@ const unenroll = async (req, res) => {
         if (check.length === 0)
             return res.status(404).json({ message: 'ไม่พบรายวิชาที่ลงทะเบียน' });
 
-        await db.query(
-            'DELETE FROM lesson_completions WHERE student_id = ? AND course_id = ?',
-            [studentId, courseId]
-        );
-        await db.query(
-            'DELETE FROM enrollments WHERE student_id = ? AND course_id = ?',
-            [studentId, courseId]
-        );
-        res.json({ message: 'ถอนรายวิชาสำเร็จ' });
+        await db.beginTransaction();
+        try {
+            await db.query(
+                'DELETE FROM lesson_completions WHERE student_id = ? AND course_id = ?',
+                [studentId, courseId]
+            );
+
+            await db.query(
+                'DELETE FROM enrollments WHERE student_id = ? AND course_id = ?',
+                [studentId, courseId]
+            );
+
+            await db.commit();
+            res.json({ message: 'ถอนรายวิชาสำเร็จ' });
+
+        } catch (transactionError) {
+            await db.rollback();
+            throw transactionError;
+        }
+
     } catch (error) {
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการถอนรายวิชา', error: error.message });
     }

@@ -1,4 +1,5 @@
 const API_URL = 'http://localhost:8000';
+let _interceptorAdded = false;
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
 /**
@@ -25,18 +26,20 @@ function initAuth(expectedRole, loginPath = '../../pages/auth/login.html') {
     axios.defaults.headers.common['x-user-role'] = user.role;
     axios.defaults.headers.common['x-user-id']   = user.id;
 
-    // interceptor: redirect เมื่อ 401/403
-    axios.interceptors.response.use(
-        res => res,
-        err => {
-            if (err.response?.status === 401 || err.response?.status === 403) {
-                localStorage.clear();
-                window.location.href = loginPath;
+    // เช็คก่อนว่าเพิ่ม interceptor ไปแล้วหรือยัง เพื่อป้องกันการทำงานซ้ำซ้อน
+    if (!_interceptorAdded) {
+        axios.interceptors.response.use(
+            res => res,
+            err => {
+                if (err.response?.status === 401 || err.response?.status === 403) {
+                    localStorage.clear();
+                    window.location.href = loginPath;
+                }
+                return Promise.reject(err);
             }
-            return Promise.reject(err);
-        }
-    );
-
+        );
+        _interceptorAdded = true;
+    }
     return user;
 }
 

@@ -40,40 +40,39 @@ const updateUser = async (req, res) => {
 
 // DELETE /users/:userId
 const deleteUser = async (req, res) => {
-    const db = getDB();
-    const { userId } = req.params;
-
-    const [users] = await db.query(
-        'SELECT user_id, role FROM users WHERE user_id = ?',
-        [userId]
-    );
-    if (users.length === 0)
-        return res.status(404).json({ message: 'ไม่พบผู้ใช้งาน' });
-
-    await db.beginTransaction();
     try {
-        // student
-        await db.query('DELETE FROM lesson_completions WHERE student_id = ?', [userId]);
-        await db.query('DELETE FROM enrollments WHERE student_id = ?', [userId]);
+        const db = getDB();
+        const [users] = await db.query('SELECT user_id, role FROM users WHERE user_id = ?', [req.params.userId]);
+        if (users.length === 0)
+            return res.status(404).json({ message: 'ไม่พบผู้ใช้งาน' });
 
-        // teacher
-        if (users[0].role === 'teacher') {
-            const [courses] = await db.query(
-                'SELECT course_id FROM courses WHERE teacher_id = ?', [userId]
-            );
-            for (const course of courses) {
-                await db.query('DELETE FROM lesson_completions WHERE course_id = ?', [course.course_id]);
-                await db.query('DELETE FROM enrollments WHERE course_id = ?', [course.course_id]);
-                await db.query('DELETE FROM lessons WHERE course_id = ?', [course.course_id]);
+        await db.beginTransaction();
+        try {
+            // student
+            await db.query('DELETE FROM lesson_completions WHERE student_id = ?', [userId]);
+            await db.query('DELETE FROM enrollments WHERE student_id = ?', [userId]);
+
+            // teacher
+            if (users[0].role === 'teacher') {
+                const [courses] = await db.query(
+                    'SELECT course_id FROM courses WHERE teacher_id = ?', [userId]
+                );
+                for (const course of courses) {
+                    await db.query('DELETE FROM lesson_completions WHERE course_id = ?', [course.course_id]);
+                    await db.query('DELETE FROM enrollments WHERE course_id = ?', [course.course_id]);
+                    await db.query('DELETE FROM lessons WHERE course_id = ?', [course.course_id]);
+                }
+                await db.query('DELETE FROM courses WHERE teacher_id = ?', [userId]);
             }
-            await db.query('DELETE FROM courses WHERE teacher_id = ?', [userId]);
-        }
 
-        await db.query('DELETE FROM users WHERE user_id = ?', [userId]);
-        await db.commit();
-        res.json({ message: 'ลบบัญชีผู้ใช้สำเร็จ' });
+            await db.query('DELETE FROM users WHERE user_id = ?', [userId]);
+            await db.commit();
+            res.json({ message: 'ลบบัญชีผู้ใช้สำเร็จ' });
+        } catch (txError) {
+            await db.rollback();
+            throw txError;
+        }
     } catch (error) {
-        await db.rollback();
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลบบัญชี', error: error.message });
     }
 };

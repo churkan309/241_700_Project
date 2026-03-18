@@ -1,10 +1,12 @@
 // student/lesson.js — ใช้ utils.js (initAuth, toast, escHtml, API_URL)
 
-const params   = new URLSearchParams(window.location.search);
+const params = new URLSearchParams(window.location.search);
 const courseId = params.get('courseId');
 
 const user = initAuth('student', '../auth/login.html');
-if (!courseId) { window.location.href = '../auth/login.html'; return; }
+if (!courseId) {
+    window.location.href = '../auth/login.html';
+} else { initUI(); }
 
 let lessons = [];
 let activeLessonIdx = 0;
@@ -23,7 +25,7 @@ function initUI() {
 async function loadCourse() {
     try {
         const { data } = await axios.get(`${API_URL}/student/courses/${courseId}/${user.id}`);
-        lessons  = data.lessons  || [];
+        lessons = data.lessons || [];
         progress = data.progress || { completed_lessons: 0, total_lessons: 0, progress_percent: 0 };
 
         renderCourseHero(data.course);
@@ -52,7 +54,7 @@ async function loadCourse() {
 
 // ── Course hero ───────────────────────────────────────────────────────────────
 function renderCourseHero(course) {
-    const pct      = progress.progress_percent;
+    const pct = progress.progress_percent;
     const pctClass = pct >= 100 ? 'done' : pct >= 50 ? 'half' : 'low';
     const barColor = pct >= 100 ? 'green' : pct >= 50 ? '' : 'orange';
 
@@ -91,12 +93,12 @@ function renderSidebar() {
 
 // ── Lesson content ────────────────────────────────────────────────────────────
 function renderContent(idx) {
-    const l       = lessons[idx];
-    const isDone  = !!l.is_completed;
+    const l = lessons[idx];
+    const isDone = !!l.is_completed;
     const resources = [
-        l.video_url    ? { type: 'video', icon: '🎬', label: 'วิดีโอบทเรียน', url: l.video_url    } : null,
-        l.document_url ? { type: 'doc',   icon: '📄', label: 'เอกสารประกอบ',  url: l.document_url } : null,
-        l.quiz_url     ? { type: 'quiz',  icon: '📝', label: 'แบบทดสอบ',      url: l.quiz_url     } : null,
+        l.video_url ? { type: 'video', icon: '🎬', label: 'วิดีโอบทเรียน', url: l.video_url } : null,
+        l.document_url ? { type: 'doc', icon: '📄', label: 'เอกสารประกอบ', url: l.document_url } : null,
+        l.quiz_url ? { type: 'quiz', icon: '📝', label: 'แบบทดสอบ', url: l.quiz_url } : null,
     ].filter(Boolean);
 
     document.getElementById('lessonContent').innerHTML = `
@@ -188,22 +190,22 @@ async function completeLesson(lessonId, idx) {
 
 // ── Update progress UI ────────────────────────────────────────────────────────
 function updateProgressUI() {
-    const pct      = progress.progress_percent;
+    const pct = progress.progress_percent;
     const pctClass = pct >= 100 ? 'done' : pct >= 50 ? 'half' : 'low';
     const barColor = pct >= 100 ? 'green' : pct >= 50 ? '' : 'orange';
 
     const bigPct = document.getElementById('bigPct');
-    const sub    = document.getElementById('progressSub');
-    const bar    = document.getElementById('heroBar');
+    const sub = document.getElementById('progressSub');
+    const bar = document.getElementById('heroBar');
 
     if (bigPct) { bigPct.textContent = `${pct}%`; bigPct.className = `progress-big-pct ${pctClass}`; }
-    if (sub)    sub.textContent = `${progress.completed_lessons} / ${progress.total_lessons} บทเรียน`;
-    if (bar)    { bar.style.width = `${pct}%`; bar.className = `progress-bar-lg progress-bar ${barColor}`; }
+    if (sub) sub.textContent = `${progress.completed_lessons} / ${progress.total_lessons} บทเรียน`;
+    if (bar) { bar.style.width = `${pct}%`; bar.className = `progress-bar-lg progress-bar ${barColor}`; }
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-document.getElementById('btnBack').addEventListener('click',    () => window.location.href = 'dashboard.html');
-document.getElementById('btnLogout').addEventListener('click',  () => logout('../auth/login.html'));
+document.getElementById('btnBack').addEventListener('click', () => window.location.href = 'dashboard.html');
+document.getElementById('btnLogout').addEventListener('click', () => logout('../auth/login.html'));
 document.getElementById('btnProfile').addEventListener('click', () => window.location.href = 'dashboard.html');
 
 // ── Start ─────────────────────────────────────────────────────────────────────
