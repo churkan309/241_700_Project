@@ -3,9 +3,8 @@ let _interceptorAdded = false;
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
 /**
- * อ่าน user จาก localStorage และตั้งค่า axios headers
- * @param {'student'|'teacher'} expectedRole — role ที่อนุญาตให้เข้าถึงหน้านี้
- * @param {string} loginPath — path ไปยังหน้า login (relative จากหน้าปัจจุบัน)
+ * @param {'student'|'teacher'} expectedRole
+ * @param {string} loginPath
  * @returns {{ id, firstname, lastname, email, role }}
  */
 function initAuth(expectedRole, loginPath = '../../pages/auth/login.html') {
@@ -22,11 +21,9 @@ function initAuth(expectedRole, loginPath = '../../pages/auth/login.html') {
         return null;
     }
 
-    // ตั้งค่า axios headers ทั่วทั้งหน้า
     axios.defaults.headers.common['x-user-role'] = user.role;
     axios.defaults.headers.common['x-user-id']   = user.id;
 
-    // เช็คก่อนว่าเพิ่ม interceptor ไปแล้วหรือยัง เพื่อป้องกันการทำงานซ้ำซ้อน
     if (!_interceptorAdded) {
         axios.interceptors.response.use(
             res => res,
@@ -45,7 +42,6 @@ function initAuth(expectedRole, loginPath = '../../pages/auth/login.html') {
 
 // ── Toast notification ────────────────────────────────────────────────────────
 /**
- * แสดง toast notification
  * @param {string} msg
  * @param {'success'|'error'} type
  */
@@ -61,7 +57,6 @@ function toast(msg, type = 'success') {
 
 // ── HTML escape ───────────────────────────────────────────────────────────────
 /**
- * Escape HTML special characters เพื่อป้องกัน XSS
  * @param {*} str
  * @returns {string}
  */
@@ -78,7 +73,6 @@ function escHtml(str) {
 function openModal(id)  { document.getElementById(id)?.classList.add('open'); }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
-/** ปิด modal เมื่อคลิก backdrop */
 function initModalBackdrop() {
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', e => {
@@ -95,10 +89,9 @@ function logout(loginPath = '../../pages/auth/login.html') {
 
 // ── Popup (modal dialog with Promise) ────────────────────────────────────────
 /**
- * แสดง popup dialog (ใช้ในหน้า register)
  * @param {string} message
  * @param {'success'|'error'|'warning'} type
- * @returns {Promise<void>} — resolve เมื่อผู้ใช้กด ตกลง
+ * @returns {Promise<void>}
  */
 function showPopup(message, type = 'error') {
     const existing = document.getElementById('custom-popup');
