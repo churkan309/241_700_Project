@@ -4,9 +4,6 @@ const params   = new URLSearchParams(window.location.search);
 const courseId = params.get('courseId');
 
 const user = initAuth('teacher', '../auth/login.html');
-if (!courseId) {
-    window.location.href = '../auth/login.html';
-} else { initUI(); }
 
 const studentWrap  = document.getElementById('studentWrap');
 const pageTitle    = document.getElementById('pageTitle');
@@ -14,6 +11,10 @@ const pageSubtitle = document.getElementById('pageSubtitle');
 const statTotal    = document.getElementById('statTotal');
 const statDone     = document.getElementById('statDone');
 const statAvg      = document.getElementById('statAvg');
+
+if (!courseId) {
+    window.location.href = '../auth/login.html';
+} else { initUI(); }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 function initUI() {

@@ -4,9 +4,6 @@ const params   = new URLSearchParams(window.location.search);
 const courseId = params.get('courseId');
 
 const user = initAuth('teacher', '../auth/login.html');
-if (!courseId) {
-    window.location.href = '../auth/login.html';
-} else { initUI(); }
 
 const lessonWrap     = document.getElementById('lessonWrap');
 const pageTitle      = document.getElementById('pageTitle');
@@ -15,6 +12,10 @@ const courseIdBadge  = document.getElementById('courseIdBadge');
 const statLessons    = document.getElementById('statLessons');
 const statVideos     = document.getElementById('statVideos');
 const statQuizzes    = document.getElementById('statQuizzes');
+
+if (!courseId) {
+    window.location.href = '../auth/login.html';
+} else { initUI(); }
 
 let cachedLessons = []; // ไว้ใช้ใน openEditLesson โดยไม่ต้องเรียก API ซ้ำ
 
