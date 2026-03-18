@@ -74,17 +74,27 @@ const deleteCourse = async (req, res) => {
             'SELECT course_id FROM courses WHERE course_id = ? AND teacher_id = ?',
             [courseId, teacherId]
         );
-        if (course.length === 0)
+        if (course.length === 0) {
             return res.status(403).json({ message: 'ไม่มีสิทธิ์ลบรายวิชานี้ หรือไม่พบรายวิชา' });
+        }
 
-        await db.query('DELETE FROM lesson_completions WHERE course_id = ?', [courseId]);
-        await db.query('DELETE FROM enrollments WHERE course_id = ?', [courseId]);
-        await db.query('DELETE FROM lessons WHERE course_id = ?', [courseId]);
-        await db.query('DELETE FROM courses WHERE course_id = ?', [courseId]);
+        await db.beginTransaction();
+        try {
+            await db.query('DELETE FROM lesson_completions WHERE course_id = ?', [courseId]);
+            await db.query('DELETE FROM enrollments WHERE course_id = ?', [courseId]);
+            await db.query('DELETE FROM lessons WHERE course_id = ?', [courseId]);
+            await db.query('DELETE FROM courses WHERE course_id = ?', [courseId]);
 
-        res.json({ message: 'ลบรายวิชาสำเร็จ' });
+            await db.commit();
+            res.json({ message: 'ลบรายวิชาสำเร็จ' });
+        } catch (transactionError) {
+            await db.rollback(); 
+            throw transactionError;
+        }
     } catch (error) {
-        res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลบรายวิชา', error: error.message });
+        console.error("Delete Course Error: ", error);
+        res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลบรายวิชา', error: error.message 
+        });
     }
 };
 

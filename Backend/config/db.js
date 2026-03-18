@@ -13,6 +13,9 @@ const connectDB = async () => {
     console.log('Connected to database');
 };
 
-const getDB = () => db;
+const getDB = () => {
+    if (!db) throw new Error('Database ยังไม่ได้เชื่อมต่อ');
+    return db;
+};
 
 module.exports = { connectDB, getDB };

@@ -38,7 +38,7 @@ const login = async (req, res) => {
         );
 
         if (rows.length === 0)
-            return res.status(404).json({ message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
+            return res.status(401).json({ message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
 
         res.json({ message: 'เข้าสู่ระบบสำเร็จ', data: rows[0] });
     } catch (error) {

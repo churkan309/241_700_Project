@@ -13,6 +13,17 @@ const courseRoutes  = require('./routes/course.routes');
 const teacherRoutes = require('./routes/teacher.routes');
 const studentRoutes = require('./routes/student.routes');
 
+// ── Process Error Handlers ───────────────────────────────────────
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    // ไม่ควร process.exit() ทันทีใน production - ควร log แล้วตัดสินใจ graceful shutdown
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    process.exit(1); // uncaughtException ร้ายแรงกว่า ควร restart
+});
+
 const app  = express();
 const PORT = process.env.PORT || 8000;
 

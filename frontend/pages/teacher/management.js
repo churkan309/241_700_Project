@@ -4,7 +4,7 @@ const params   = new URLSearchParams(window.location.search);
 const courseId = params.get('courseId');
 
 const user = initAuth('teacher', '../auth/login.html');
-if (!courseId) window.location.href = '../auth/login.html';
+if (!courseId) { window.location.href = '../auth/login.html'; return; }
 
 const studentWrap  = document.getElementById('studentWrap');
 const pageTitle    = document.getElementById('pageTitle');
