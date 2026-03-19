@@ -1,5 +1,3 @@
-// student/lesson.js — ใช้ utils.js (initAuth, toast, escHtml, API_URL)
-
 const params = new URLSearchParams(window.location.search);
 const courseId = params.get('courseId');
 

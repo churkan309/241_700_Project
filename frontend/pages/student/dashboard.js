@@ -1,5 +1,3 @@
-// student/dashboard.js — ใช้ utils.js (initAuth, toast, escHtml, openModal, closeModal, logout, API_URL)
-
 const user = initAuth('student', '../auth/login.html');
 
 const heroName   = document.getElementById('heroName');
@@ -202,7 +200,11 @@ document.getElementById('btnSaveProfile').addEventListener('click', async () => 
 
 // ── Delete account ────────────────────────────────────────────────────────────
 document.getElementById('btnDeleteAccount').addEventListener('click', async () => {
-    if (!confirm('คุณต้องการลบบัญชีนี้ถาวรใช่หรือไม่?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้')) return;
+    const confirmed = await showPopup(
+        'คุณต้องการลบบัญชีนี้ถาวรใช่หรือไม่?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้',
+        'confirm'
+    );
+    if (!confirmed) return;
     const btn = document.getElementById('btnDeleteAccount');
     btn.disabled = true; btn.textContent = 'กำลังลบ...';
     try {

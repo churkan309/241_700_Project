@@ -1,5 +1,3 @@
-// register.js — ใช้ utils.js (showPopup, API_URL)
-
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
